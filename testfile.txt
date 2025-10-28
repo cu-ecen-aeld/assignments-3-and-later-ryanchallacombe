@@ -1,0 +1,7 @@
+Could not read from conf/username.txt
+execv /bin/echo home is $HOME returned ã]±²
+/home/ryan/projects/assignment-1-ryanchallacombe/assignment-autotest/test/assignment3/Test_systemcalls.c:97:test_exec_redirect_calls:FAIL: Expected 'home is $HOME' Was '\xE3]\xB1\xB2\x05'. The variable $HOME should not be expanded using execv()
+
+-----------------------
+3 Tests 1 Failures 0 Ignored 
+FAIL
