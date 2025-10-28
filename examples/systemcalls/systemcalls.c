@@ -246,7 +246,8 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_end(args);
     
     //printf("*** Returning (1=true, 0=false): %d\n", ret );
-	close(fd);
+    // Need to close STDOUT file here. Previously had close(fd), which was giving me issues b/c it was closed already
+	close(1);			
     return ret;
 
 }
