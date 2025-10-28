@@ -193,7 +193,10 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	pid_t pid;
 	
 	// open the file passed into the function
-	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0666);
+	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	
+	// do this to ovoid duplicate print outs
+	fflush(stdout);
 	
 	pid = fork();
 	if (pid == -1) {
@@ -206,16 +209,16 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		// this sets fd 1 (STDOUT) to the same file descriptor as fd which is the file name passed into the function
 		// so from henceforth, if this code doesnt' have an error, anything going to STDOUT goes to the file name
 		// This actually opens the file with fd = 1
-		if (dup2(fd, 1) < 0) {
+		if (dup2(fd, STDOUT_FILENO) < 0) {
 			perror("dup2"); 
 			goto DONE; 
-		}
+		} 
 		
 		// we are now done with the old fd so we can close it
-		close(fd);
+		//close(fd);
     
 		ret_execv = execv(command[0], cmd);
-		
+
 		if (ret_execv == -1) {
 			// printf("******* EXECV returned -1. Going to DONE\n");
 			goto DONE;
@@ -229,6 +232,8 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		//printf("******* EXECV returned without executing. Going to DONE\n");
 		goto DONE;
 	}
+	
+	close(fd);
 	
 	if (waitpid(pid, &status, 0) == -1)
 		goto DONE;
@@ -245,9 +250,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	// Clean up arg list. This is required after va_start()
     va_end(args);
     
-    //printf("*** Returning (1=true, 0=false): %d\n", ret );
-    // Need to close STDOUT file here. Previously had close(fd), which was giving me issues b/c it was closed already
-	close(1);			
+    //printf("*** Returning (1=true, 0=false): %d\n", ret );		
     return ret;
 
 }
