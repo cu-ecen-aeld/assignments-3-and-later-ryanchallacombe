@@ -226,7 +226,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		close(fd);
     
     	errno = 0;
-		ret_execv = execv(command[0], cmd);
+		//ret_execv = execv(command[0], cmd);
 		ret_execv = execv(cpath, cmd);
 
 		if (ret_execv == -1) {
