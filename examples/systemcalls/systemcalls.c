@@ -56,6 +56,9 @@ bool do_system(const char *cmd)
 
 bool do_exec(int count, ...)
 {
+
+	printf("***** Start of do_exec function\n");
+	
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -89,6 +92,7 @@ bool do_exec(int count, ...)
 	// copy command into a new array because we don't need command[0] in the second execv argument
 	// we instead need the command (basename) of command[0]
 	char *cmd[count];
+	char *cpath = command[0];
 	cmd[0] = basename(command[0]);
 	//printf("*** cmd[0]=%s\n", cmd[0]);
 	for (int i = 1; i <=	 count; i++)
@@ -102,6 +106,7 @@ bool do_exec(int count, ...)
  	int ret_execv = 0;
 	pid_t pid;
 	
+	fflush(stdout);
 	pid = fork();
 	if (pid == -1) {
 		goto DONE;
@@ -109,9 +114,11 @@ bool do_exec(int count, ...)
 	
 	// in the child process fork() returns 0, so the following is executed in the child
 	else if (pid == 0) {
-		ret_execv = execv(command[0], cmd);
+		//ret_execv = execv(command[0], cmd);
+		ret_execv = execv(cpath, cmd);
 		
 		if (ret_execv == -1) {
+			perror("EXECV error in do_exec"); 
 			// printf("******* EXECV returned -1. Going to DONE\n");
 			goto DONE;
 		}
@@ -140,9 +147,11 @@ bool do_exec(int count, ...)
 	// Clean up arg list. This is required after va_start()
     va_end(args);
     
-    //printf("*** Returning (1=true, 0=false): %d\n", ret );
-
+    printf("**** do_exec: first 2 execv params are: %s and %s\n", cpath, cmd[0]);
+    printf("*** Returning Returning from do_exec (1=true, 0=false): %d\n", ret );
+    fflush(stdout);
     return ret;
+
 }
 
 /**
@@ -152,6 +161,8 @@ bool do_exec(int count, ...)
 */
 bool do_exec_redirect(const char *outputfile, int count, ...)
 {
+
+	printf("***** Start of do_exec_redirect function\n");	
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -159,14 +170,14 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
-        printf("command[%d]=%s\n", i, command[i]);
+        //printf("command[%d]=%s\n", i, command[i]);
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     command[count] = command[count];
-    printf("command[count]=%s\n", command[count]);
-    printf("command[0]=%s\n", command[0]);
+    //printf("command[count]=%s\n", command[count]);
+    //printf("command[0]=%s\n", command[0]);
 
 /*
  * TODO
@@ -189,9 +200,9 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	// It was discovered that in the loop below traversing through command[] moves the command ptr
 	for (int i = 1; i <= count; i++) {
 		cmd[i] = command[i];
-		printf("*** cmd[%d]=%s\n", i, cmd[i]);	
+		//printf("*** cmd[%d]=%s\n", i, cmd[i]);	
 	}
-	 printf("command[0] after cmd loop =%s\n", command[0]);
+	 //printf("command[0] after cmd loop =%s\n", command[0]);
 
 	bool ret = false;		
 	int status;
@@ -212,7 +223,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	
 	// in the child process fork() returns 0, so the following is executed in the child
 	else if (pid == 0) {	
-		printf("**** first 2 execv params are: %s and %s\n", command[0], cmd[0]);
+		//printf("**** first 2 execv params are: %s and %s\n", command[0], cmd[0]);
 		
 		// this sets fd 1 (STDOUT) to the same file descriptor as fd which is the file name passed into the function
 		// so from henceforth, if this code doesnt' have an error, anything going to STDOUT goes to the file name
@@ -230,7 +241,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		ret_execv = execv(cpath, cmd);
 
 		if (ret_execv == -1) {
-			perror("EXECV error"); 
+			perror("EXECV error in do_exec_redirect"); 
 			//printf("******* EXECV returned -1. \n");
 			//printf("******* Going to DONE\n");
 			goto DONE;
@@ -262,8 +273,11 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	// Clean up arg list. This is required after va_start()
     va_end(args);
     
-    //printf("*** Returning (1=true, 0=false): %d\n", ret );	
-    close(fd);
+    printf("**** do_exec_redirect: first 2 execv params are: %s and %s\n", cpath, cmd[0]);
+    printf("*** Returning from do_exec_redirect (1=true, 0=false): %d\n", ret );	
+    fflush(stdout);
     return ret;
+    
+
 
 }
