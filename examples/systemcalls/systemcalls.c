@@ -17,14 +17,6 @@
 */
 bool do_system(const char *cmd)
 {
-
-/*
- * TODO  add your code here
- *  Call the system() function with the command set in the cmd
- *   and return a boolean true if the system() call completed with success
- *   or false() if it returned a failure
-*/
-	
 	int ret;
 	
 	ret = system(cmd);
@@ -36,8 +28,6 @@ bool do_system(const char *cmd)
 		//printf("System call failure. Return status=%d\n", ret);
 		return false;
 	}
-
-    //return true;
 }
 
 /**
@@ -57,7 +47,7 @@ bool do_system(const char *cmd)
 bool do_exec(int count, ...)
 {
 
-	printf("***** Start of do_exec function\n");
+	//printf("***** Start of do_exec function *****\n");
 	
     va_list args;
     va_start(args, count);
@@ -68,19 +58,6 @@ bool do_exec(int count, ...)
         command[i] = va_arg(args, char *);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
-
-	/*
-	 * TODO:
-	 *   Execute a system command by calling fork, execv(),
-	 *   and wait instead of system (see LSP page 161).
-	 *   Use the command[0] as the full path to the command to execute
-	 *   (first argument to execv), and use the remaining arguments
-	 *   as second argument to the execv() command.
-	 *
-	*/
 	
 	/* How to use execv:
 	// int execv(const char *path, char *const argv[]);
@@ -91,67 +68,55 @@ bool do_exec(int count, ...)
 	
 	// copy command into a new array because we don't need command[0] in the second execv argument
 	// we instead need the command (basename) of command[0]
+	// Since we are going to be looping through command[] it will change the value (pointer movement?)
+	// so we copy the full command path to cpath. 
+	// After this section, we dont' need command anymore
 	char *cmd[count];
 	char *cpath = command[0];
 	cmd[0] = basename(command[0]);
 	//printf("*** cmd[0]=%s\n", cmd[0]);
-	for (int i = 1; i <=	 count; i++)
+	for (int i = 1; i <= count; i++)
 	{
 		cmd[i] = command[i];
 		//printf("*** cmd[%d]=%s\n", i, cmd[i]);	
 	}
 
-	bool ret = false;		
-	int status;
- 	int ret_execv = 0;
-	pid_t pid;
+	// Clean up arg list. This is required after va_start()
+    va_end(args);
+   	
+   	//printf("**** do_exec: Preparing to fork... first 2 execv params are: %s and %s\n", cpath, cmd[0]);
 	
-	fflush(stdout);
+	int status;
+	pid_t pid;
+
 	pid = fork();
-	if (pid == -1) {
-		goto DONE;
+	if (pid == -1) {		// fork error
+		perror("fork");
+		return false;
 	}
 	
 	// in the child process fork() returns 0, so the following is executed in the child
 	else if (pid == 0) {
-		//ret_execv = execv(command[0], cmd);
-		ret_execv = execv(cpath, cmd);
-		
-		if (ret_execv == -1) {
+		if ( execv(cpath, cmd) == -1) {		// execv error
 			perror("EXECV error in do_exec"); 
-			// printf("******* EXECV returned -1. Going to DONE\n");
-			goto DONE;
+			return false;
 		}
-		
-		
-		// execv won't return unless there is a failure
-		// in which case it returns with -1
-		// the goto statment is only executed if execv returns
-		perror("execv");
-		//printf("******* EXECV returned without executing. Going to DONE\n");
-		goto DONE;
 	}
 	
-	if (waitpid(pid, &status, 0) == -1)
-		goto DONE;
-	else if (WEXITSTATUS(status) != 0) {
+	
+	if (waitpid(pid, &status, 0) == -1) {	// wait error
+		perror("***** waitpid");
+		return false;
+	}
+	//else if (!WIFEXITED(status)) {
+	else if (WEXITSTATUS(status) != 0) {	
 		//printf("******* Command executed by execv returned: %d. Going to DONE\n", WEXITSTATUS(status));
-		goto DONE;
+		return false;
 	}
-	
-	// if we get to this point, no errors have occured, so set return value to true
-	ret = true;
-	
-	DONE:
-	
-	// Clean up arg list. This is required after va_start()
-    va_end(args);
-    
-    printf("**** do_exec: first 2 execv params are: %s and %s\n", cpath, cmd[0]);
-    printf("*** Returning Returning from do_exec (1=true, 0=false): %d\n", ret );
-    fflush(stdout);
-    return ret;
-
+	else {
+		// if we get to this point, no errors have occured, so set return value to true
+		return true;
+	}
 }
 
 /**
@@ -159,10 +124,12 @@ bool do_exec(int count, ...)
 *   This file will be closed at completion of the function call.
 * All other parameters, see do_exec above
 */
+// 	references for dup2: 	https://stackoverflow.com/a/13784315/1446624 
+// 							https://stackoverflow.com/questions/1720535/practical-examples-use-dup-or-dup2
 bool do_exec_redirect(const char *outputfile, int count, ...)
 {
 
-	printf("***** Start of do_exec_redirect function\n");	
+	//printf("***** Start of do_exec_redirect function\n");	
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -173,24 +140,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         //printf("command[%d]=%s\n", i, command[i]);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
-    //printf("command[count]=%s\n", command[count]);
-    //printf("command[0]=%s\n", command[0]);
 
-/*
- * TODO
- *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
- *   redirect standard out to a file specified by outputfile.
- *   The rest of the behaviour is same as do_exec()
- *
-*/
-
-	// 	references: 	https://stackoverflow.com/a/13784315/1446624 
-	// 					https://stackoverflow.com/questions/1720535/practical-examples-use-dup-or-dup2
-	// 	
-	
 	// copy command into a new array because we don't need command[0] in the second execv argument
 	// we instead need the command (basename) of command[0]
 	char *cmd[count];
@@ -202,24 +152,21 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		cmd[i] = command[i];
 		//printf("*** cmd[%d]=%s\n", i, cmd[i]);	
 	}
-	 //printf("command[0] after cmd loop =%s\n", command[0]);
 
-	bool ret = false;		
+	// Clean up arg list. This is required after va_start()
+    va_end(args);
+	
 	int status;
- 	int ret_execv = 0;
 	pid_t pid;
 	
 	// open the file passed into the function
 	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
 	
-	// do this to ovoid duplicate print outs
-	fflush(stdout);
-	
 	pid = fork();
-	if (pid == -1) {
-		goto DONE;
+	if (pid == -1) {		// fork error
+		perror("fork");
+		return false;
 	}
-
 	
 	// in the child process fork() returns 0, so the following is executed in the child
 	else if (pid == 0) {	
@@ -230,54 +177,29 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		// This actually opens the file with fd = 1
 		if (dup2(fd, STDOUT_FILENO) < 0) {
 			perror("dup2"); 
-			goto DONE; 
+			return false; 
 		} 
 		
 		// we are now done with the old fd so we can close it
 		close(fd);
     
-    	errno = 0;
-		//ret_execv = execv(command[0], cmd);
-		ret_execv = execv(cpath, cmd);
-
-		if (ret_execv == -1) {
+    	if (execv(cpath, cmd) == -1) {		// execv error
 			perror("EXECV error in do_exec_redirect"); 
-			//printf("******* EXECV returned -1. \n");
-			//printf("******* Going to DONE\n");
-			goto DONE;
+			return false;
 		}
-		
-		
-		// execv won't return unless there is a failure
-		// in which case it returns with -1
-		// the goto statment is only executed if execv returns
-		perror("execv");
-		//printf("******* EXECV returned without executing. Going to DONE\n");
-		goto DONE;
 	}
 	
-	//close(fd);
-	
-	if (waitpid(pid, &status, 0) == -1)
-		goto DONE;
-	else if (WEXITSTATUS(status) != 0) {
+	if (waitpid(pid, &status, 0) == -1) {	// wait error
+		perror("***** waitpid");
+		return false;
+	}
+	//else if (!WIFEXITED(status)) {
+	else if (WEXITSTATUS(status) != 0) {	
 		//printf("******* Command executed by execv returned: %d. Going to DONE\n", WEXITSTATUS(status));
-		goto DONE;
+		return false;
 	}
-	
-	// if we get to this point, no errors have occured, so set return value to true
-	ret = true;
-	
-	DONE:
-	
-	// Clean up arg list. This is required after va_start()
-    va_end(args);
-    
-    printf("**** do_exec_redirect: first 2 execv params are: %s and %s\n", cpath, cmd[0]);
-    printf("*** Returning from do_exec_redirect (1=true, 0=false): %d\n", ret );	
-    fflush(stdout);
-    return ret;
-    
-
-
+	else {
+		// if we get to this point, no errors have occured, so set return value to true
+		return true;
+	}
 }
