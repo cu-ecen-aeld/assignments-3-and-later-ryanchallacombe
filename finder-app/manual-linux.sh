@@ -49,15 +49,15 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     #echo "RUNNING MAKE CONFIG"
     #make menuconfig
 
-    if [ -f "${CONFIG_FILE_LOC}/.config" ]; then
+    #if [ -f "${CONFIG_FILE_LOC}/.config" ]; then
         # copy the .config file to appropriate location
-        echo "**** COPYING A STATIC .config FILE TO ${OUTDIR}/linux-stable"
-        cp ${CONFIG_FILE_LOC}/.config ${OUTDIR}/linux-stable
-    else
-        echo "**** UNABLE TO FIND .config FILE AT ${CONFIG_FILE_LOC}"
-        echo "RUNNING MAKE CONFIG"
-        make menuconfig
-    fi
+    #    echo "**** COPYING A STATIC .config FILE TO ${OUTDIR}/linux-stable"
+    #    cp ${CONFIG_FILE_LOC}/.config ${OUTDIR}/linux-stable
+    #else
+    #    echo "**** UNABLE TO FIND .config FILE AT ${CONFIG_FILE_LOC}"
+    #    echo "RUNNING MAKE CONFIG"
+    #    make menuconfig
+    #fi
 
 
     echo "RUNNING CLEAN STEP"
