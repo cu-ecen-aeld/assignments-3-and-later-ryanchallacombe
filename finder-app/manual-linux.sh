@@ -5,6 +5,7 @@
 
 # ./manual-linux.sh /home/ryan/projects/tmp/aeld/
 # ./manual-linux.sh /home/ryan/projects/tmp/aeld/ 2>&1 | tee outfile_manual-linux.txt
+# 
 
 set -e
 set -u
@@ -17,7 +18,7 @@ FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 SYSROOT_CROSS_COMPILER=/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc
-CONFIG_FILE_LOC=/home/ryan/projects/sandbox/a3p2_config
+CONFIG_FILE_LOC=/home/ryan/projects/assignment-1-ryanchallacombe/finder-app/a3p2_kernel_config
 
 # add path to my cross compiler
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
@@ -48,7 +49,7 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     #echo "RUNNING MAKE CONFIG"
     #make menuconfig
 
-    if [ -f "${CONFIG_FILE_LOC}/.config"]; then
+    if [ -f "${CONFIG_FILE_LOC}/.config" ]; then
         # copy the .config file to appropriate location
         echo "**** COPYING A STATIC .config FILE TO ${OUTDIR}/linux-stable"
         cp ${CONFIG_FILE_LOC}/.config ${OUTDIR}/linux-stable
@@ -105,8 +106,7 @@ echo $(pwd)
 echo "********* ls ********* "
 echo $(ls)
 mkdir -p bin dev etc home lib lib64 proc sbin sys tmp usr var
-mkdir -p usr/bin usr/lib usr/sbin
-mkdir -p var/log
+mkdir -p usr/bin usr/lib usr/sbin var/log home/conf
 echo "********* Printing working directory ********* "
 echo $(pwd)
 echo "********* ls ********* "

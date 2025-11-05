@@ -1,4 +1,5 @@
-#!/usr/bin/bash
+#!/bin/sh		
+# above updated 11/3/2025 for assignment 3 part 2 qemu build (busybox doesn't have bash, just sh)
 
 ###############################################
 #
