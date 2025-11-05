@@ -17,8 +17,10 @@ BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
-SYSROOT_CROSS_COMPILER=/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc
+#SYSROOT_CROSS_COMPILER=/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc
+SYSROOT_CROSS_COMPILER=//home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 CONFIG_FILE_LOC=/home/ryan/projects/assignment-1-ryanchallacombe/finder-app/a3p2_kernel_config
+
 
 # add path to my cross compiler
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
@@ -159,6 +161,8 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # simply copy them to the apprpriate locations
 # note: assumes a static cross compiler location
 cp ${SYSROOT_CROSS_COMPILER}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+# /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
+# /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc/lib/
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
