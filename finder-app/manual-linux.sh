@@ -44,6 +44,14 @@ else
     #exit 1
 fi
 
+#/home/ryan/projects/assignment-1-ryanchallacombe/README.md
+
+if [ -f "/home/ryan/projects/assignment-1-ryanchallacombe/README.md" ]; then
+    echo "**** File /home/ryan/projects/assignment-1-ryanchallacombe/README.md was found"
+else
+    echo "**** UNABLE TO FIND /home/ryan/projects/assignment-1-ryanchallacombe/README.md"
+fi
+
 if [ -f "${SYSROOT_CROSS_COMPILER}/${FNAME_2}" ]; then
     echo "**** File ${SYSROOT_CROSS_COMPILER}/${FNAME_2} was found"
     echo "EXITING WITH 0"
