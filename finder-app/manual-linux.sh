@@ -3,8 +3,10 @@
 # Author: Siddhant Jajoo.
 # Student: Ryan Challacombe, Fall 2025
 
-# ./manual-linux.sh /home/ryan/projects/tmp/aeld/
-# ./manual-linux.sh /home/ryan/projects/tmp/aeld/ 2>&1 | tee outfile_manual-linux.txt
+# Troubleshooting
+#   1. disconnected and deleted actions runner. deleted dir. then created new runner
+#   2. docker wasn't running as evidenced by: sudo systemctl is-active docker.service. started with: sudo systemctl start docker
+
 # 
 
 set -e
