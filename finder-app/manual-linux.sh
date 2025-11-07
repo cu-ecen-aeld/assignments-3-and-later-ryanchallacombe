@@ -12,8 +12,6 @@
 set -e
 set -u
 
-
-
 OUTDIR=/tmp/aeld
 KERNEL_REPO=git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 KERNEL_VERSION=v5.15.163
@@ -41,44 +39,6 @@ echo $(pwd)
 echo "********* ls ********* "
 echo $(ls)
 
-#############################
-if [ -f "${FILE_LOC_1}/${FNAME_1}" ]; then
-    echo "**** File ${FILE_LOC_1}/${FNAME_1} was found"
-    #echo "EXITING WITH 0"
-    #exit 0
-else
-    echo "**** UNABLE TO FIND .${FILE_LOC_1}/${FNAME_1}"
-    #echo "EXITING WITH 1"
-    #exit 1
-fi
-
-#/home/ryan/projects/assignment-1-ryanchallacombe/README.md
-
-if [ -f "/home/ryan/projects/assignment-1-ryanchallacombe/README.md" ]; then
-    echo "**** File /home/ryan/projects/assignment-1-ryanchallacombe/README.md was found"
-else
-    echo "**** UNABLE TO FIND /home/ryan/projects/assignment-1-ryanchallacombe/README.md"
-fi
-
-if [ -f "README.md" ]; then
-    echo "**** File README.md was found in current directory"
-else
-    echo "**** UNABLE TO FIND README.md"
-fi
-
-if [ -f "${SYSROOT_CROSS_COMPILER}/${FNAME_2}" ]; then
-    echo "**** File ${SYSROOT_CROSS_COMPILER}/${FNAME_2} was found"
-    echo "EXITING WITH 0"
-    exit 0
-else
-    echo "**** UNABLE TO FIND ${SYSROOT_CROSS_COMPILER}/${FNAME_2}"
-    echo "EXITING WITH 1"
-    exit 1
-fi
-
- exit 1
-
-#############################
 
 if [ $# -lt 1 ]
 then
