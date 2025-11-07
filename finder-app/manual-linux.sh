@@ -39,8 +39,8 @@ echo $(pwd)
 echo "********* ls ********* "
 echo $(ls)
 
-START_DIR=$(pwd)
-echo "Starting directory ${START_DIR}"
+# START_DIR=$(pwd)
+echo "Starting directory ${FINDER_APP_DIR}"
 
 if [ $# -lt 1 ]
 then
@@ -54,47 +54,6 @@ mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
 
-######################################################
-# Expirmental
-
-mkdir -p ${OUTDIR}/rootfs/lib
-mkdir -p ${OUTDIR}/rootfs/lib64
-
-echo "Moving back to ${OUTDIR}/rootfs"
-cd ${OUTDIR}/rootfs
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-echo "Moving to starting directory ${FINDER_APP_DIR}"
-cd ${FINDER_APP_DIR}
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-
-
-cp ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
-cp libm.so.6 ${OUTDIR}/rootfs/lib64
-cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
-cp libc.so.6 ${OUTDIR}/rootfs/lib64
-
-echo "Moving back to ${OUTDIR}/rootfs"
-cd ${OUTDIR}/rootfs
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-
-exit 0
-
-######################################################
 
 
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
@@ -217,8 +176,8 @@ echo "Library dependencies"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
-echo "Moving to starting directory ${START_DIR}"
-cd ${START_DIR}
+echo "Moving to starting directory ${FINDER_APP_DIR}"
+cd ${FINDER_APP_DIR}
 
 # Add library dependencies to rootfs
 # simply copy them to the apprpriate locations
@@ -239,8 +198,10 @@ cd ${OUTDIR}/rootfs
 
 
 # Make device nodes
-sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
-sudo mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
+#sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
+#sudo mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
+mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
+mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
 
 # Clean and build the writer utility
 make clean -C ${FINDER_APP_DIR}
@@ -259,6 +220,7 @@ cp autorun-qemu.sh ${OUTDIR}/rootfs/home
 # Chown the root directory
 cd ${OUTDIR}/rootfs
 sudo chown -R root:root *
+# chown -R root:root *
 
 # Create initramfs.cpio.gz
 find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
