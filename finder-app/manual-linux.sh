@@ -233,8 +233,8 @@ echo $(ls -1 -l)
 
 # Make device nodes
 echo "******** Making device nodes ..."
-sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
-sudo mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
+sudo mknod -m 666 dev/null c 1 3 
+sudo mknod -m 600 dev/console c 5 1
 # mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
 # mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
 
