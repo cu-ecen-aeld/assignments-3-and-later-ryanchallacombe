@@ -33,6 +33,14 @@ FNAME_2=lib/ld-linux-aarch64.so.1
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 
+echo "Running script as $(whoami)"
+echo "PATH = ${PATH}"
+
+echo "********* Printing working directory ********* "
+echo $(pwd)
+echo "********* ls ********* "
+echo $(ls)
+
 #############################
 if [ -f "${FILE_LOC_1}/${FNAME_1}" ]; then
     echo "**** File ${FILE_LOC_1}/${FNAME_1} was found"
@@ -52,6 +60,12 @@ else
     echo "**** UNABLE TO FIND /home/ryan/projects/assignment-1-ryanchallacombe/README.md"
 fi
 
+if [ -f "README.md" ]; then
+    echo "**** File README.md was found in current directory"
+else
+    echo "**** UNABLE TO FIND README.md"
+fi
+
 if [ -f "${SYSROOT_CROSS_COMPILER}/${FNAME_2}" ]; then
     echo "**** File ${SYSROOT_CROSS_COMPILER}/${FNAME_2} was found"
     echo "EXITING WITH 0"
@@ -61,6 +75,8 @@ else
     echo "EXITING WITH 1"
     exit 1
 fi
+
+ exit 1
 
 #############################
 
