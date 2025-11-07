@@ -32,12 +32,15 @@ export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 
 echo "Running script as $(whoami)"
-echo "PATH = ${PATH}"
+#echo "PATH = ${PATH}"
 
 echo "********* Printing working directory ********* "
 echo $(pwd)
 echo "********* ls ********* "
 echo $(ls)
+
+START_DIR=$(pwd)
+echo "Starting directory ${START_DIR}"
 
 
 if [ $# -lt 1 ]
@@ -51,6 +54,39 @@ fi
 mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
+######################################################
+# Expirmental
+
+mkdir -p ${OUTDIR}/rootfs/lib
+mkdir -p ${OUTDIR}/rootfs/lib64
+
+echo "Moving to starting directory ${START_DIR}"
+cd ${START_DIR}
+
+echo "********* Printing working directory ********* "
+echo $(pwd)
+echo "********* ls ********* "
+echo $(ls)
+
+
+
+cp ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+cp libm.so.6 ${OUTDIR}/rootfs/lib64
+cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
+cp libc.so.6 ${OUTDIR}/rootfs/lib64
+
+echo "Moving back to ${OUTDIR}/rootfs"
+cd ${OUTDIR}/rootfs
+
+echo "********* Printing working directory ********* "
+echo $(pwd)
+echo "********* ls ********* "
+echo $(ls)
+
+
+exit 0
+
+######################################################
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
 	echo "CLONING GIT LINUX STABLE VERSION ${KERNEL_VERSION} IN ${OUTDIR}"
@@ -171,6 +207,8 @@ echo "Library dependencies"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
+echo "Moving to starting directory ${START_DIR}"
+cd ${START_DIR}
 
 # Add library dependencies to rootfs
 # simply copy them to the apprpriate locations
@@ -185,6 +223,9 @@ cp libm.so.6 ${OUTDIR}/rootfs/lib64
 cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
 #cp ${SYSROOT_CROSS_COMPILER}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
 cp libc.so.6 ${OUTDIR}/rootfs/lib64
+
+echo "Moving back to ${OUTDIR}/rootfs"
+cd ${OUTDIR}/rootfs
 
 
 # Make device nodes
