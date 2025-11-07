@@ -54,7 +54,22 @@ mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
 
+#######################
+# Experimental
 
+echo "********* Printing working directory ********* "
+echo $(pwd)
+
+echo "Making Pipe with mknod"
+sudo mknod -m 666 my_pipe p
+
+echo "********* ls -l ********* "
+echo $(ls -l)
+
+
+exit 1
+
+#######################
 
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
