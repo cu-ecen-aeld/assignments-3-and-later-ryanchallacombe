@@ -54,39 +54,7 @@ fi
 mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
-######################################################
-# Expirmental
 
-mkdir -p ${OUTDIR}/rootfs/lib
-mkdir -p ${OUTDIR}/rootfs/lib64
-
-echo "Moving to starting directory ${START_DIR}"
-cd ${START_DIR}
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-
-
-cp ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
-cp libm.so.6 ${OUTDIR}/rootfs/lib64
-cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
-cp libc.so.6 ${OUTDIR}/rootfs/lib64
-
-echo "Moving back to ${OUTDIR}/rootfs"
-cd ${OUTDIR}/rootfs
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-
-exit 0
-
-######################################################
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
 	echo "CLONING GIT LINUX STABLE VERSION ${KERNEL_VERSION} IN ${OUTDIR}"
