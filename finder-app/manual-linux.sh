@@ -6,6 +6,7 @@
 # Troubleshooting
 #   1. disconnected and deleted actions runner. deleted dir. then created new runner
 #   2. docker wasn't running as evidenced by: sudo systemctl is-active docker.service. started with: sudo systemctl start docker
+# Same with containerd: sudo systemctl is-active containerd.service
 
 # 
 
