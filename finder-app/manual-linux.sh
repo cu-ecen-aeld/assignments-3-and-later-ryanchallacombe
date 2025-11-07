@@ -139,12 +139,18 @@ echo $(ls)
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/busybox" ]
 then
-git clone git://busybox.net/busybox.git
+    git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
 else
+    #remove busybox dir
+    sudo rm -rf ${OUTDIR}/busybox
+
+    git clone git://busybox.net/busybox.git
     cd busybox
+    git checkout ${BUSYBOX_VERSION}
+    # TODO:  Configure busybox
 fi
 
 echo "********* Printing working directory ********* "
@@ -158,11 +164,26 @@ make distclean
 make defconfig
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
+
+###########################
+# attempting to setuid root
+echo "********* Before setuid root Printing working directory ********* "
+echo $(pwd)
+echo "********* ls -1 -l ********* "
+echo $(ls -1 -l)
+
+
+# attempting to setuid root
+echo "********* Attempting to setuid root ********* "
+sudo chown -R root:root .
+sudo chmod u+s .
+ls -la .
     
 echo "********* Printing working directory ********* "
 echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
+echo "********* ls -1 -l ********* "
+echo $(ls -1 -l)
+###########################
 
 # move back to root from rootfs/busybox
 cd ${OUTDIR}/rootfs
@@ -196,8 +217,21 @@ cp libc.so.6 ${OUTDIR}/rootfs/lib64
 echo "Moving back to ${OUTDIR}/rootfs"
 cd ${OUTDIR}/rootfs
 
+###########################
+echo "********* Showing rootfs ownership before Changing ********* "
+echo "********* ls -1 -l ********* "
+echo $(ls -1 -l)
+
+# Chown the root directory
+echo "******** Changing root directory ownership"
+sudo chown -R root:root *
+
+echo "********* ls -1 -l ********* "
+echo $(ls -1 -l)
+###########################
 
 # Make device nodes
+echo "******** Making device nodes ..."
 sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
 sudo mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
 # mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
