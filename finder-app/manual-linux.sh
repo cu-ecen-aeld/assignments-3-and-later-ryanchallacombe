@@ -215,12 +215,17 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # Add library dependencies to rootfs
 # simply copy them to the apprpriate locations
 # note: assumes a static cross compiler location
-cp ${SYSROOT_CROSS_COMPILER}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+#cp ${SYSROOT_CROSS_COMPILER}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+cp ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
 # /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 # /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc/lib/
-cp ${SYSROOT_CROSS_COMPILER}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
-cp ${SYSROOT_CROSS_COMPILER}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
-cp ${SYSROOT_CROSS_COMPILER}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
+#cp ${SYSROOT_CROSS_COMPILER}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
+cp libm.so.6 ${OUTDIR}/rootfs/lib64
+#cp ${SYSROOT_CROSS_COMPILER}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
+cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
+#cp ${SYSROOT_CROSS_COMPILER}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
+cp libc.so.6 ${OUTDIR}/rootfs/lib64
+
 
 # Make device nodes
 sudo mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
