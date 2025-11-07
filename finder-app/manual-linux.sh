@@ -63,7 +63,7 @@ mkdir -p ${OUTDIR}/rootfs/lib64
 echo "Moving back to ${OUTDIR}/rootfs"
 cd ${OUTDIR}/rootfs
 
-cho "********* Printing working directory ********* "
+echo "********* Printing working directory ********* "
 echo $(pwd)
 echo "********* ls ********* "
 echo $(ls)
