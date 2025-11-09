@@ -4,12 +4,7 @@
 # Student: Ryan Challacombe, Fall 2025
 
 # Troubleshooting
-#   1. disconnected and deleted actions runner. deleted dir. then created new runner
-#   2. docker wasn't running as evidenced by: sudo systemctl is-active docker.service. started with: sudo systemctl start docker
-# Same with containerd: sudo systemctl is-active containerd.service
-
-# /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
-# /home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc/lib/
+#   My docker was running in rootless mode. I needed to switch to default
 
 set -e
 set -u
@@ -22,25 +17,13 @@ FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 CONFIG_FILE_LOC=/home/ryan/projects/assignment-1-ryanchallacombe/finder-app/a3p2_kernel_config
-FILE_LOC_1=/tmp
-FNAME_1=deleteme.txt
-FNAME_2=lib/ld-linux-aarch64.so.1
-
 
 # add path to my cross compiler
 export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
-export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
+#export PATH=$PATH:/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 
 echo "Running script as $(whoami)"
-#echo "PATH = ${PATH}"
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
-# START_DIR=$(pwd)
-echo "Starting directory ${FINDER_APP_DIR}"
+echo "Starting directory $(pwd)"
 
 if [ $# -lt 1 ]
 then
@@ -53,8 +36,6 @@ fi
 mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
-
-
 
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
@@ -79,10 +60,8 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     #    make menuconfig
     #fi
 
-
     echo "RUNNING CLEAN STEP"
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
-    #make ${ARCH} ${CROSS_COMPILE}mrproper
     
     echo "RUNNING DEFCONFIG STEP"
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
@@ -98,12 +77,10 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
 
     echo "***** KERNEL BUILD COMPLETED ******"
-
 fi
 
 echo "Adding the Image in outdir"
 cp ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ${OUTDIR}
-# cp /home/ryan/projects/tmp/aeld/linux-stable/arch/arm64/boot/Image /home/ryan/projects/tmp/aeld/
 
 echo "Creating the staging directory for the root filesystem"
 cd "$OUTDIR"
@@ -121,11 +98,6 @@ echo $(ls)
 echo "********* Making rootfs ********* "
 mkdir ${OUTDIR}/rootfs 
 cd ${OUTDIR}/rootfs
-
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
 mkdir -p bin dev etc home lib lib64 proc sbin sys tmp usr var
 mkdir -p usr/bin usr/lib usr/sbin var/log home/conf
 echo "********* Printing working directory ********* "
@@ -140,56 +112,25 @@ then
     git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
-    # TODO:  Configure busybox
 else
     #remove busybox dir
     sudo rm -rf ${OUTDIR}/busybox
-
     git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
-    # TODO:  Configure busybox
 fi
 
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
+# Configure busybox
+make distclean
+make defconfig
 
 # Make and install busybox
 echo "********* Making and installing busybox ********* "
-make distclean
-make defconfig
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
-###########################
-# attempting to setuid root
-echo "********* Before setuid root Printing working directory ********* "
-echo $(pwd)
-echo "********* ls -1 -l ********* "
-echo $(ls -1 -l)
-
-
-# attempting to setuid root
-echo "********* Attempting to setuid root ********* "
-sudo chown -R root:root .
-sudo chmod u+s .
-ls -la .
-    
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls -1 -l ********* "
-echo $(ls -1 -l)
-###########################
-
 # move back to root from rootfs/busybox
 cd ${OUTDIR}/rootfs
-echo "********* Printing working directory ********* "
-echo $(pwd)
-echo "********* ls ********* "
-echo $(ls)
-
 
 echo "Library dependencies"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
@@ -203,47 +144,21 @@ cd ${FINDER_APP_DIR}
 # note: assumes a static cross compiler location
 SYSROOT_CROSS_COMPILER=$(${CROSS_COMPILE}gcc -print-sysroot)
 cp ${SYSROOT_CROSS_COMPILER}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
-#cp ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
-#cp libm.so.6 ${OUTDIR}/rootfs/lib64
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
-#cp libresolv.so.2 ${OUTDIR}/rootfs/lib64
 cp ${SYSROOT_CROSS_COMPILER}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
-#cp libc.so.6 ${OUTDIR}/rootfs/lib64
-
-SYSROOT=$(${CROSS_COMPILE}gcc -print-sysroot)
-cp -a $SYSROOT/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib/
-cp -a $SYSROOT/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
-cp -a $SYSROOT/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
-cp -a $SYSROOT/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
 
 echo "Moving back to ${OUTDIR}/rootfs"
 cd ${OUTDIR}/rootfs
-
-###########################
-echo "********* Showing rootfs ownership before Changing ********* "
-echo "********* ls -1 -l ********* "
-echo $(ls -1 -l)
-
-# Chown the root directory
-echo "******** Changing root directory ownership"
-sudo chown -R root:root *
-
-echo "********* ls -1 -l ********* "
-echo $(ls -1 -l)
-###########################
 
 # Make device nodes
 echo "******** Making device nodes ..."
 sudo mknod -m 666 dev/null c 1 3 
 sudo mknod -m 600 dev/console c 5 1
-# mknod -m 666 ${OUTDIR}/rootfs/dev/null c 1 3 
-# mknod -m 600 ${OUTDIR}/rootfs/dev/console c 5 1
 
 # Clean and build the writer utility
 make clean -C ${FINDER_APP_DIR}
 make -C ${FINDER_APP_DIR} writer CROSS_COMPILE=${CROSS_COMPILE}
-
 
 # Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
@@ -253,11 +168,9 @@ cp writer finder.sh finder-test.sh ${OUTDIR}/rootfs/home
 cp writer conf/username.txt conf/assignment.txt ${OUTDIR}/rootfs/home/conf/
 cp autorun-qemu.sh ${OUTDIR}/rootfs/home
 
-
 # Chown the root directory
 cd ${OUTDIR}/rootfs
 sudo chown -R root:root *
-# chown -R root:root *
 
 # Create initramfs.cpio.gz
 find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
