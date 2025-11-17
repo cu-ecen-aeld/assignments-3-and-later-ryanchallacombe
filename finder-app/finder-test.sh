@@ -8,7 +8,9 @@ set -u
 NUMFILES=10
 WRITESTR=AELD_IS_FUN
 WRITEDIR=/tmp/aeld-data
-username=$(cat conf/username.txt)
+#username=$(cat conf/username.txt)
+username=$(cat /etc/finder-app/conf/username.txt)		# updated for assignment 4 part 2
+
 
 if [ $# -lt 3 ]
 then
@@ -33,7 +35,8 @@ rm -rf "${WRITEDIR}"
 
 # create $WRITEDIR if not assignment1
 # assignment=`cat ../conf/assignment.txt`	
-assignment=`cat conf/assignment.txt`		# updated for assignment 3 part 2
+#assignment=`cat conf/assignment.txt`						# updated for assignment 3 part 2
+assignment=`cat /etc/finder-app/conf/assignment.txt`		# updated for assignment 4 part 2
 
 if [ $assignment != 'assignment1' ]
 then
@@ -63,7 +66,11 @@ do
 done
 
 OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
-./finder.sh /tmp/aeld-data AELD_IS_FUN
+# ./finder.sh /tmp/aeld-data AELD_IS_FUN				# commenting out for assignment 4 part 2 because it looks to be rogue
+
+# Adding for assignment 4 part 2 
+# Modify your finder-test.sh script to write a file with output of the finder command to /tmp/assignment4-result.txt 
+echo ${OUTPUTSTRING} > /tmp/assignment4-result.txt
 
 # remove temporary directories
 rm -rf /tmp/aeld-data
