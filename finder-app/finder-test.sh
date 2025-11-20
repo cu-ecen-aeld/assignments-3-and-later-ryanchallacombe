@@ -34,8 +34,6 @@ echo "Writing ${NUMFILES} files containing string ${WRITESTR} to ${WRITEDIR}"
 rm -rf "${WRITEDIR}"
 
 # create $WRITEDIR if not assignment1
-# assignment=`cat ../conf/assignment.txt`	
-#assignment=`cat conf/assignment.txt`						# updated for assignment 3 part 2
 assignment=`cat /etc/finder-app/conf/assignment.txt`		# updated for assignment 4 part 2
 
 if [ $assignment != 'assignment1' ]
@@ -62,11 +60,10 @@ fi
 
 for i in $( seq 1 $NUMFILES)
 do
-	./writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"
+	writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"			# updated for assignment 4 part 2
 done
 
-OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
-# ./finder.sh /tmp/aeld-data AELD_IS_FUN				# commenting out for assignment 4 part 2 because it looks to be rogue
+OUTPUTSTRING=$(finder.sh "$WRITEDIR" "$WRITESTR")		# updated for assignment 4 part 2
 
 # Adding for assignment 4 part 2 
 # Modify your finder-test.sh script to write a file with output of the finder command to /tmp/assignment4-result.txt 
