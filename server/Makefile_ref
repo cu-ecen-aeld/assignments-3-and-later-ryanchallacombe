@@ -16,3 +16,27 @@ util_test: util_test.c
 clean:
 	rm -f aesdsocket *.o
 	rm -f util_test *.o
+
+
+
+all: aesdsocket
+
+ifdef CROSS_COMPILE
+	aesdsocket: aesdsocket.o utils.o
+		$(CROSS_COMPILE)gcc ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+
+	aesdsocket.o: aesdsocket.c ${UTILS_HEADER}
+		$(CROSS_COMPILE)gcc ${CFLAGS} -c aesdsocket.c
+
+	utils.o: ${UTILS_SOURCE} ${UTILS_HEADER}
+		$(CROSS_COMPILE)gcc ${CFLAGS} -c ${UTILS_SOURCE}
+else
+	aesdsocket: aesdsocket.o utils.o
+		${CC} ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+
+	aesdsocket.o: aesdsocket.c ${UTILS_HEADER}
+		${CC} ${CFLAGS} -c aesdsocket.c
+
+	utils.o: ${UTILS_SOURCE} ${UTILS_HEADER}
+		${CC} ${CFLAGS} -c ${UTILS_SOURCE}
+endif

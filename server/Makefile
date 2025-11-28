@@ -2,19 +2,33 @@ CFLAGS = -Wall -Werror -Iinclude/
 UTILS_HEADER = include/utils.h
 UTILS_SOURCE = include/utils.c
 
+## Invoke cross compilation with: >> make CROSS_COMPILE=aarch64-none-linux-gnu- all
 
-export PATH := $(PATH):/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
+## Line below not required because was have added the path to .bashrc file
+# export PATH := $(PATH):/home/ryan/projects/aarch64_toolchain_install_dir/install/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
 
-# all: aesdsocket
+all: aesdsocket
 
 aesdsocket: aesdsocket.o utils.o
+ifdef CROSS_COMPILE
+	$(CROSS_COMPILE)gcc ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+else
 	${CC} ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+endif
 
 aesdsocket.o: aesdsocket.c ${UTILS_HEADER}
+ifdef CROSS_COMPILE
+	$(CROSS_COMPILE)gcc ${CFLAGS} -c aesdsocket.c
+else
 	${CC} ${CFLAGS} -c aesdsocket.c
+endif
 
 utils.o: ${UTILS_SOURCE} ${UTILS_HEADER}
+ifdef CROSS_COMPILE
+	$(CROSS_COMPILE)gcc ${CFLAGS} -c ${UTILS_SOURCE}
+else
 	${CC} ${CFLAGS} -c ${UTILS_SOURCE}
+endif
 
 clean:
 	rm -f aesdsocket *.o

@@ -10,6 +10,12 @@ void signal_handler ( int signal_number );
 char *read_until_term(int fd, const char term, int *rtn_flag);
 ssize_t readLine(int fd, void *buffer, size_t n);
 
+/**********************************
+*   Globals
+**********************************/
+
+bool caught_signal;
+
 
 /////////////////////////////
 //		Function definitions
@@ -66,18 +72,17 @@ int writer_func(const char *fpath, const char *buf)
 
 void signal_handler ( int signal_number )
 {
-    /**
-    * Save a copy of errno so we can restore it later.  See https://pubs.opengroup.org/onlinepubs/9699919799/
-    */
+    //
+    // Save a copy of errno so we can restore it later.  See https://pubs.opengroup.org/onlinepubs/9699919799/
+    //
     int errno_saved = errno;
 
-    if ( (signal_number == SIGINT) || (signal_number == SIGTERM) ) {
-        // TODO: Change this to syslog
-        printf("Caught signal, exiting\n");
-    } 
+    if ( (signal_number == SIGINT) || (signal_number == SIGTERM) )
+        caught_signal = true;
 
     errno = errno_saved;
 }
+
 
 
 
