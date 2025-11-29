@@ -138,10 +138,16 @@ int main(int argc, char *argv[]) {
 	syslog(LOG_DEBUG, "***** Socket file set with descriptor: %d\n", sockfd);
 
 	// set SO_REUSEADDR on a socket to true (1):
-	/*int optval = 1;
+	int optval = 1;
+	socklen_t optlen;
 	if ( setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) != 0) {
 		perror("setsockopt");
-	}*/
+	}
+
+	getsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
+	if (optval != 0) {
+    	printf("SO_REUSEADDR enabled on sockfd!\n");
+	}
 
 	// bind() call
 	errno = 0;
@@ -151,8 +157,6 @@ int main(int argc, char *argv[]) {
 		close(sockfd);
 		goto DONE;
 	} 
-
-	printf("***bind returned %d\n", ret);
 
 	// setup for listening / accepting / while loop
 	int backlog = 10;
@@ -307,11 +311,11 @@ int main(int argc, char *argv[]) {
 
 	/**************** Cleanup and Exit ****************/
 
-	close(sockfd);
+	
  
 	DONE:
 
-	
+	close(sockfd);
 
 	freeaddrinfo(servinfo);		// free the linked list
 
