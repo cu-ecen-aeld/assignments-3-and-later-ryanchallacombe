@@ -106,12 +106,11 @@ int main(int argc, char *argv[]) {
 			perror("remove");
 	}
 	
-	
 	/************************* Socket *************************/
 	// setup
 	const char *port = "9000";
 	struct addrinfo hints;
-	struct addrinfo *servinfo;		// will point to the linked list of results
+	struct addrinfo *servinfo;				// will point to the linked list of results
 
 	// hints setup
 	memset(&hints, 0, sizeof(hints));		// make sure that the struct is cleared
@@ -123,7 +122,7 @@ int main(int argc, char *argv[]) {
 	int ret;
 	if ( (ret = getaddrinfo(NULL, port, &hints, &servinfo)) != 0 ) {
 		// log error
-		syslog(LOG_ERR, "getaddrinfo() call error: %s\n", gai_strerror(ret));
+		printf("getaddrinfo() call error: %s\n", gai_strerror(ret));
 		rtn_val = -1;
 		goto DONE;
 	}
@@ -132,20 +131,28 @@ int main(int argc, char *argv[]) {
 	int sockfd;
 	errno = 0;
 	if ( (sockfd = socket(servinfo->ai_family, servinfo-> ai_socktype, servinfo->ai_protocol)) == -1 ) {
-		syslog(LOG_ERR, "socket() call error: %s\n", strerror(errno));
+		printf("socket() call error: %s\n", strerror(errno));
 		rtn_val = -1;
 		goto DONE;
 	}
 	syslog(LOG_DEBUG, "***** Socket file set with descriptor: %d\n", sockfd);
 
+	// set SO_REUSEADDR on a socket to true (1):
+	/*int optval = 1;
+	if ( setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) != 0) {
+		perror("setsockopt");
+	}*/
+
 	// bind() call
 	errno = 0;
 	if ( (ret = bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen)) == -1 ) {
-		syslog(LOG_ERR, "bind() call error: %s\n", strerror(errno));
+		printf("bind() call error: %s\n", strerror(errno));
 		rtn_val = -1;
 		close(sockfd);
 		goto DONE;
 	} 
+
+	printf("***bind returned %d\n", ret);
 
 	// setup for listening / accepting / while loop
 	int backlog = 10;
@@ -159,25 +166,25 @@ int main(int argc, char *argv[]) {
 	
 	// Daemon mode is invoked by argument 1 as '-d' when this application is invoked from command line
 	pid_t pid;
-	if ( !strncmp("-d", argv[1], 2) ) {
-		printf("Daemon mode invoked.\n");
+	if (argc > 1) {			// check to ensure we got a command line argument
+		if ( !strncmp("-d", argv[1], 2) ) {
+			printf("Daemon mode invoked.\n");
 
-		pid = fork();
-		if ( pid == -1) {			// fork error
-			perror("fork");
-			rtn_val = -1;
-			goto DONE;
-		} else if ( pid != 0 ) {	// pid = 0 is child pid
+			pid = fork();
+			if ( pid == -1) {			// fork error
+				perror("fork");
+				rtn_val = -1;
+				goto DONE;
+			} else if ( pid != 0 ) {	// pid = 0 is child pid
 
-			// exit parent process
-			printf("Exiting parent process\n");
-			rtn_val = 0;
-			goto DONE;
+				// exit parent process
+				printf("Exiting parent process\n");
+				rtn_val = 0;
+				goto DONE;
+			}
 		}
 	}
 	
-
-
 
 	/********** Loop **********/
 	while ( !caught_signal ) {
@@ -187,7 +194,7 @@ int main(int argc, char *argv[]) {
 		if ( (ret = listen(sockfd, backlog)) == -1 ) {
 			syslog(LOG_ERR, "listen() call error: %s\n", strerror(errno));
 			rtn_val = -1;
-			close(sockfd);
+			//close(sockfd);
 			goto DONE;
 		}
 
@@ -198,7 +205,7 @@ int main(int argc, char *argv[]) {
 		if ( (spkr_fd = accept(sockfd, (struct sockaddr *)&spkr_addr, &addr_size)) == -1) {
 			syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
 			rtn_val = -1;
-			close(sockfd);
+			//close(sockfd);
 			goto DONE;
 		}
 
@@ -218,71 +225,72 @@ int main(int argc, char *argv[]) {
 		if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
 			printf("Error in read_until_term. Returning -1\n");
 			rtn_val = -1;
-			close(sockfd);
+			//close(sockfd);
 			free(line);
 			goto DONE;
 		}
 
-		printf("***line read from the socket: %s\n", line);
-		printf("***return flag: %d\n", *return_flag);
+		//printf("***line read from the socket: %s\n", line);
+		//printf("***return flag: %d\n", *return_flag);
 
 		// Write to file
 		if ( (ret = writer_func(wr_file_path, line)) != 0) {
 			printf("writer_func returned: %d\n", ret);
-			return -1;
+			rtn_val = -1;
+			free(line);
+			goto DONE;
 		}
-		else 
-			printf("writer_func completed write\n");
+		
+		//printf("writer_func completed write\n");
 
 		free(line);
 
 		/**************** Read all data from the file and write back on the socket stream ****************/
 
-
-		/*
-		open file, get fd
-		start loop
-		read until newline
-		write to socket
-		terminate loop when EOF found (or error?)
-		*/
-
+		// open write file
 		int wr_file_fd = open(wr_file_path, O_RDONLY);
 		*return_flag = val;		// reset return flag value
 
+		// loop to read from file and write to socket stream
 		// line has been freed but we will reuse it here
-
 		for (;;) {
 
 			// TODO: review all the error handling
 			line = read_until_term(wr_file_fd, '\n', return_flag);
 
 			if ( *return_flag == 5 || *return_flag == 4 ) {		// reached EOF
-				printf("***return flag: %d\n", *return_flag);
-				printf("***reached EOF\n");
+				//printf("***return flag: %d\n", *return_flag);
+				//printf("***reached EOF\n");
 				break;
 			} else if ( *return_flag == 1 || *return_flag == 2 ) {			// malloc or realloc failed
 				printf("***return flag: %d\n", *return_flag);
 				printf("***Memory allocation failure. Returning -1\n");
 				rtn_val = -1;
-				close(sockfd);
+				//close(sockfd);
 				free(line);
 				goto DONE;
 			} else if ( *return_flag == 3 ) {
 				printf("Error in read_until_term. Returning -1\n");
 				rtn_val = -1;
-				close(sockfd);
+				//close(sockfd);
 				free(line);
 				goto DONE;
 			} else if ( *return_flag == 0 ){		// memory was sufficient and found a newline char
-				printf("***line: %s\n", line);
-				printf("***return flag: %d\n", *return_flag);
+				//printf("***line: %s\n", line);
+				//printf("***return flag: %d\n", *return_flag);
 
 				// Write to socket
 				int len, bytes_sent;
 				len = strlen(line);
-				bytes_sent = send(spkr_fd, line, len, 0);
-				printf("***sent: %d bytes\n", (uint) bytes_sent);
+				if ( (bytes_sent = send(spkr_fd, line, len, 0)) != len ) {
+					printf("Error, bytes transmission incomplete.\n");
+					rtn_val = -1;
+					//close(sockfd);
+					free(line);
+					goto DONE;
+				}
+				
+				//printf("***sent: %d bytes\n", (uint) bytes_sent);
 			} else {
 				break;		// this should never be reached
 			}
@@ -293,22 +301,28 @@ int main(int argc, char *argv[]) {
 		free(line);
 
 		close(spkr_fd);
+		syslog(LOG_DEBUG, "Closed connection from %s\n", ipstr);
 		printf("Closed connection from %s\n", ipstr);
 	}
 
-	/**************** Cleanup ****************/
-    
-	close(sockfd);
+	/**************** Cleanup and Exit ****************/
 
+	close(sockfd);
+ 
 	DONE:
 
-		freeaddrinfo(servinfo);		// free the linked list
+	
 
-		if ( caught_signal == true )
-			syslog(LOG_DEBUG, "Caught signal, exiting\n");
+	freeaddrinfo(servinfo);		// free the linked list
 
-		/* Let user know program is ending */
-		syslog(LOG_DEBUG, "***** Exiting program %s with return value: %d\n", prog_name, rtn_val);
+	if ( caught_signal == true ) {
+		syslog(LOG_DEBUG, "Caught signal, exiting\n");
+		printf("Caught signal, exiting\n");
+	}
 
-		return rtn_val;
+	/* Let user know program is ending */
+	syslog(LOG_DEBUG, "***** Exiting program %s with return value: %d\n", prog_name, rtn_val);
+	printf("***** Exiting program %s with return value: %d\n", prog_name, rtn_val);
+
+	return rtn_val;
 }
