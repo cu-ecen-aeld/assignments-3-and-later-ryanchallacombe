@@ -299,6 +299,8 @@ int main(int argc, char *argv[]) {
 				break;		// this should never be reached
 			}
 
+			free(line);
+
 		}
 
 		close(wr_file_fd);
@@ -316,7 +318,7 @@ int main(int argc, char *argv[]) {
 	DONE:
 
 	close(sockfd);
-
+	//free(line);
 	freeaddrinfo(servinfo);		// free the linked list
 
 	if ( caught_signal == true ) {
