@@ -1,203 +1,225 @@
-==12646== Memcheck, a memory error detector
-==12646== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==12646== Using Valgrind-3.18.1-42b08ed5bd-20211015 and LibVEX; rerun with -h for copyright info
-==12646== Command: ./aesdsocket -d
-==12646== Parent PID: 10181
-==12646== 
---12646-- 
---12646-- Valgrind options:
---12646--    --leak-check=full
---12646--    --show-leak-kinds=all
---12646--    --track-origins=yes
---12646--    --verbose
---12646--    --log-file=/tmp/valgrind-out.txt
---12646-- Contents of /proc/version:
---12646--   Linux version 6.8.0-87-generic (buildd@lcy02-amd64-060) (x86_64-linux-gnu-gcc-12 (Ubuntu 12.3.0-1ubuntu1~22.04.2) 12.3.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #88~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Oct 14 14:03:14 UTC 2
---12646-- 
---12646-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
---12646-- Page sizes: currently 4096, max supported 4096
---12646-- Valgrind library directory: /usr/libexec/valgrind
---12646-- Reading syms from /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket
---12646-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
---12646--   Considering /usr/lib/debug/.build-id/ac/af96d7b1a6bad57b559d646233d5dc1a23257c.debug ..
---12646--   .. build-id is valid
---12646-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
---12646--    object doesn't have a symbol table
---12646--    object doesn't have a dynamic symbol table
---12646-- Scheduler: using generic scheduler lock implementation.
---12646-- Reading suppressions file: /usr/libexec/valgrind/default.supp
-==12646== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-12646-by-ryan-on-???
-==12646== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-12646-by-ryan-on-???
-==12646== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-12646-by-ryan-on-???
-==12646== 
-==12646== TO CONTROL THIS PROCESS USING vgdb (which you probably
-==12646== don't want to do, unless you know exactly what you're doing,
-==12646== or are doing some strange experiment):
-==12646==   /usr/bin/vgdb --pid=12646 ...command...
-==12646== 
-==12646== TO DEBUG THIS PROCESS USING GDB: start GDB like this
-==12646==   /path/to/gdb ./aesdsocket
-==12646== and then give GDB the following command
-==12646==   target remote | /usr/bin/vgdb --pid=12646
-==12646== --pid is optional if only one valgrind process is running
-==12646== 
---12646-- REDIR: 0x402aa40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580bcec2 (???)
---12646-- REDIR: 0x402a810 (ld-linux-x86-64.so.2:index) redirected to 0x580bcedc (???)
---12646-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
---12646--    object doesn't have a symbol table
---12646-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
---12646--    object doesn't have a symbol table
-==12646== WARNING: new redirection conflicts with existing -- ignoring it
---12646--     old: 0x0402aa40 (strlen              ) R-> (0000.0) 0x580bcec2 ???
---12646--     new: 0x0402aa40 (strlen              ) R-> (2007.0) 0x0484ee30 strlen
---12646-- REDIR: 0x4027220 (ld-linux-x86-64.so.2:strcmp) redirected to 0x484fcd0 (strcmp)
---12646-- REDIR: 0x402afa0 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853840 (mempcpy)
---12646-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
---12646--   Considering /usr/lib/debug/.build-id/4f/7b0c955c3d81d7cac1501a2498b69d1d82bfe7.debug ..
---12646--   .. build-id is valid
-==12646== WARNING: new redirection conflicts with existing -- ignoring it
---12646--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
---12646--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e050 aligned_alloc
-==12646== WARNING: new redirection conflicts with existing -- ignoring it
---12646--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
---12646--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e020 aligned_alloc
-==12646== WARNING: new redirection conflicts with existing -- ignoring it
---12646--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
---12646--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e050 aligned_alloc
-==12646== WARNING: new redirection conflicts with existing -- ignoring it
---12646--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
---12646--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e020 aligned_alloc
---12646-- REDIR: 0x4913720 (libc.so.6:strnlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49139e0 (libc.so.6:strpbrk) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49132e0 (libc.so.6:strcmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4931cd0 (libc.so.6:wcsnlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49146d0 (libc.so.6:memset) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4930540 (libc.so.6:wcslen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914c10 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4930370 (libc.so.6:wcschr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913260 (libc.so.6:index) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913960 (libc.so.6:rindex) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49145a0 (libc.so.6:memmove) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
-==12646== Preferring higher priority redirection:
---12646--     old: 0x04a0b840 (__memcpy_avx_unalign) R-> (2018.0) 0x04850f90 __memcpy_avx_unaligned_erms
---12646--     new: 0x04a0b840 (__memcpy_avx_unalign) R-> (2018.1) 0x04852880 memmove
---12646-- REDIR: 0x49303f0 (libc.so.6:wcscmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49149e0 (libc.so.6:stpncpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49309b0 (libc.so.6:wmemchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913830 (libc.so.6:strncmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914a70 (libc.so.6:strcasecmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913420 (libc.so.6:strcspn) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4930470 (libc.so.6:wcscpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49131d0 (libc.so.6:strcat) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914b60 (libc.so.6:strncasecmp_l) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914480 (libc.so.6:bcmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x491c570 (libc.so.6:memrchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4916010 (libc.so.6:strchrnul) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913390 (libc.so.6:strcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914b10 (libc.so.6:strcasecmp_l) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49136a0 (libc.so.6:strlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49138d0 (libc.so.6:strncpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914950 (libc.so.6:stpcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49143f0 (libc.so.6:memchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4913b00 (libc.so.6:strspn) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x49147d0 (libc.so.6:mempcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4914ac0 (libc.so.6:strncasecmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4915f80 (libc.so.6:rawmemchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
---12646-- REDIR: 0x4a08690 (libc.so.6:__strrchr_avx2) redirected to 0x484e810 (rindex)
---12646-- REDIR: 0x49100a0 (libc.so.6:malloc) redirected to 0x4848820 (malloc)
---12646-- REDIR: 0x4911520 (libc.so.6:calloc) redirected to 0x484d9d0 (calloc)
---12646-- REDIR: 0x4a08480 (libc.so.6:__strchrnul_avx2) redirected to 0x4853330 (strchrnul)
---12646-- REDIR: 0x4a08860 (libc.so.6:__strlen_avx2) redirected to 0x484ed10 (strlen)
---12646-- REDIR: 0x49103e0 (libc.so.6:free) redirected to 0x484b210 (free)
---12646-- REDIR: 0x4a0b840 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852880 (memmove)
---12646-- REDIR: 0x4913fc0 (libc.so.6:__GI_strstr) redirected to 0x4853ae0 (__strstr_sse2)
---12646-- REDIR: 0x4a04b00 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852010 (bcmp)
---12646-- REDIR: 0x4a039c0 (libc.so.6:__strcmp_avx2) redirected to 0x484fbd0 (strcmp)
---12646-- REDIR: 0x4a0b800 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4853440 (mempcpy)
---12646-- REDIR: 0x4910740 (libc.so.6:realloc) redirected to 0x484dc50 (realloc)
---12646-- REDIR: 0x4a0c000 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4852770 (memset)
---12646-- REDIR: 0x4a04340 (libc.so.6:__memchr_avx2) redirected to 0x484fd50 (memchr)
---12646-- REDIR: 0x4a08200 (libc.so.6:__strchr_avx2) redirected to 0x484e9f0 (index)
-==12646== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
-==12646==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12646==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12646==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646==  Address 0x1ffefffb48 is on thread 1's stack
-==12646==  in frame #1, created by main (???:)
-==12646==  Uninitialised value was created by a stack allocation
-==12646==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646== 
-==12646== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
-==12646==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12646==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12646==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646==  Address 0x1ffefffb48 is on thread 1's stack
-==12646==  in frame #1, created by main (???:)
-==12646==  Uninitialised value was created by a stack allocation
-==12646==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646== 
---12646-- REDIR: 0x4a03e00 (libc.so.6:__strncmp_avx2) redirected to 0x484f3e0 (strncmp)
-==12646== 
-==12646== HEAP SUMMARY:
-==12646==     in use at exit: 0 bytes in 0 blocks
-==12646==   total heap usage: 27 allocs, 27 frees, 41,143 bytes allocated
-==12646== 
-==12646== All heap blocks were freed -- no leaks are possible
-==12646== 
-==12646== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-==12646== 
-==12646== 1 errors in context 1 of 2:
-==12646== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
-==12646==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12646==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12646==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646==  Address 0x1ffefffb48 is on thread 1's stack
-==12646==  in frame #1, created by main (???:)
-==12646==  Uninitialised value was created by a stack allocation
-==12646==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646== 
-==12646== 
-==12646== 1 errors in context 2 of 2:
-==12646== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
-==12646==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12646==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12646==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646==  Address 0x1ffefffb48 is on thread 1's stack
-==12646==  in frame #1, created by main (???:)
-==12646==  Uninitialised value was created by a stack allocation
-==12646==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12646== 
-==12646== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
---12647-- REDIR: 0x4a09d30 (libc.so.6:__strcpy_avx2) redirected to 0x484ee60 (strcpy)
---12647-- REDIR: 0x4a0aa20 (libc.so.6:__stpcpy_avx2) redirected to 0x4852130 (stpcpy)
-==12647== 
-==12647== HEAP SUMMARY:
-==12647==     in use at exit: 0 bytes in 0 blocks
-==12647==   total heap usage: 174 allocs, 174 frees, 530,147 bytes allocated
-==12647== 
-==12647== All heap blocks were freed -- no leaks are possible
-==12647== 
-==12647== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-==12647== 
-==12647== 1 errors in context 1 of 2:
-==12647== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
-==12647==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12647==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12647==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12647==  Address 0x1ffefffb48 is on thread 1's stack
-==12647==  in frame #1, created by main (???:)
-==12647==  Uninitialised value was created by a stack allocation
-==12647==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12647== 
-==12647== 
-==12647== 1 errors in context 2 of 2:
-==12647== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
-==12647==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
-==12647==    by 0x499265E: getsockopt (getsockopt.c:94)
-==12647==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12647==  Address 0x1ffefffb48 is on thread 1's stack
-==12647==  in frame #1, created by main (???:)
-==12647==  Uninitialised value was created by a stack allocation
-==12647==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
-==12647== 
-==12647== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+==14800== Memcheck, a memory error detector
+==14800== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==14800== Using Valgrind-3.18.1-42b08ed5bd-20211015 and LibVEX; rerun with -h for copyright info
+==14800== Command: ./aesdsocket -d
+==14800== Parent PID: 10181
+==14800== 
+--14800-- 
+--14800-- Valgrind options:
+--14800--    --leak-check=full
+--14800--    --show-leak-kinds=all
+--14800--    --track-origins=yes
+--14800--    --verbose
+--14800--    --log-file=/tmp/valgrind-out.txt
+--14800-- Contents of /proc/version:
+--14800--   Linux version 6.8.0-87-generic (buildd@lcy02-amd64-060) (x86_64-linux-gnu-gcc-12 (Ubuntu 12.3.0-1ubuntu1~22.04.2) 12.3.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #88~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Oct 14 14:03:14 UTC 2
+--14800-- 
+--14800-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--14800-- Page sizes: currently 4096, max supported 4096
+--14800-- Valgrind library directory: /usr/libexec/valgrind
+--14800-- Reading syms from /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket
+--14800-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+--14800--   Considering /usr/lib/debug/.build-id/ac/af96d7b1a6bad57b559d646233d5dc1a23257c.debug ..
+--14800--   .. build-id is valid
+--14800-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--14800--    object doesn't have a symbol table
+--14800--    object doesn't have a dynamic symbol table
+--14800-- Scheduler: using generic scheduler lock implementation.
+--14800-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==14800== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-14800-by-ryan-on-???
+==14800== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-14800-by-ryan-on-???
+==14800== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-14800-by-ryan-on-???
+==14800== 
+==14800== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==14800== don't want to do, unless you know exactly what you're doing,
+==14800== or are doing some strange experiment):
+==14800==   /usr/bin/vgdb --pid=14800 ...command...
+==14800== 
+==14800== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==14800==   /path/to/gdb ./aesdsocket
+==14800== and then give GDB the following command
+==14800==   target remote | /usr/bin/vgdb --pid=14800
+==14800== --pid is optional if only one valgrind process is running
+==14800== 
+--14800-- REDIR: 0x402aa40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580bcec2 (???)
+--14800-- REDIR: 0x402a810 (ld-linux-x86-64.so.2:index) redirected to 0x580bcedc (???)
+--14800-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--14800--    object doesn't have a symbol table
+--14800-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+--14800--    object doesn't have a symbol table
+==14800== WARNING: new redirection conflicts with existing -- ignoring it
+--14800--     old: 0x0402aa40 (strlen              ) R-> (0000.0) 0x580bcec2 ???
+--14800--     new: 0x0402aa40 (strlen              ) R-> (2007.0) 0x0484ee30 strlen
+--14800-- REDIR: 0x4027220 (ld-linux-x86-64.so.2:strcmp) redirected to 0x484fcd0 (strcmp)
+--14800-- REDIR: 0x402afa0 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853840 (mempcpy)
+--14800-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
+--14800--   Considering /usr/lib/debug/.build-id/4f/7b0c955c3d81d7cac1501a2498b69d1d82bfe7.debug ..
+--14800--   .. build-id is valid
+==14800== WARNING: new redirection conflicts with existing -- ignoring it
+--14800--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
+--14800--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e050 aligned_alloc
+==14800== WARNING: new redirection conflicts with existing -- ignoring it
+--14800--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
+--14800--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e020 aligned_alloc
+==14800== WARNING: new redirection conflicts with existing -- ignoring it
+--14800--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
+--14800--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e050 aligned_alloc
+==14800== WARNING: new redirection conflicts with existing -- ignoring it
+--14800--     old: 0x04910c60 (memalign            ) R-> (1011.0) 0x0484e080 memalign
+--14800--     new: 0x04910c60 (memalign            ) R-> (1017.0) 0x0484e020 aligned_alloc
+--14800-- REDIR: 0x4913720 (libc.so.6:strnlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49139e0 (libc.so.6:strpbrk) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49132e0 (libc.so.6:strcmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4931cd0 (libc.so.6:wcsnlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49146d0 (libc.so.6:memset) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4930540 (libc.so.6:wcslen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914c10 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4930370 (libc.so.6:wcschr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913260 (libc.so.6:index) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913960 (libc.so.6:rindex) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49145a0 (libc.so.6:memmove) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+==14800== Preferring higher priority redirection:
+--14800--     old: 0x04a0b840 (__memcpy_avx_unalign) R-> (2018.0) 0x04850f90 __memcpy_avx_unaligned_erms
+--14800--     new: 0x04a0b840 (__memcpy_avx_unalign) R-> (2018.1) 0x04852880 memmove
+--14800-- REDIR: 0x49303f0 (libc.so.6:wcscmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49149e0 (libc.so.6:stpncpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49309b0 (libc.so.6:wmemchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913830 (libc.so.6:strncmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914a70 (libc.so.6:strcasecmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913420 (libc.so.6:strcspn) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4930470 (libc.so.6:wcscpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49131d0 (libc.so.6:strcat) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914b60 (libc.so.6:strncasecmp_l) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914480 (libc.so.6:bcmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x491c570 (libc.so.6:memrchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4916010 (libc.so.6:strchrnul) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913390 (libc.so.6:strcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914b10 (libc.so.6:strcasecmp_l) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49136a0 (libc.so.6:strlen) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49138d0 (libc.so.6:strncpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914950 (libc.so.6:stpcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49143f0 (libc.so.6:memchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4913b00 (libc.so.6:strspn) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x49147d0 (libc.so.6:mempcpy) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4914ac0 (libc.so.6:strncasecmp) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4915f80 (libc.so.6:rawmemchr) redirected to 0x483f220 (_vgnU_ifunc_wrapper)
+--14800-- REDIR: 0x4a08690 (libc.so.6:__strrchr_avx2) redirected to 0x484e810 (rindex)
+--14800-- REDIR: 0x49100a0 (libc.so.6:malloc) redirected to 0x4848820 (malloc)
+--14800-- REDIR: 0x4911520 (libc.so.6:calloc) redirected to 0x484d9d0 (calloc)
+--14800-- REDIR: 0x4a08480 (libc.so.6:__strchrnul_avx2) redirected to 0x4853330 (strchrnul)
+--14800-- REDIR: 0x4a08860 (libc.so.6:__strlen_avx2) redirected to 0x484ed10 (strlen)
+--14800-- REDIR: 0x49103e0 (libc.so.6:free) redirected to 0x484b210 (free)
+--14800-- REDIR: 0x4a0b840 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852880 (memmove)
+--14800-- REDIR: 0x4913fc0 (libc.so.6:__GI_strstr) redirected to 0x4853ae0 (__strstr_sse2)
+--14800-- REDIR: 0x4a04b00 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852010 (bcmp)
+--14800-- REDIR: 0x4a039c0 (libc.so.6:__strcmp_avx2) redirected to 0x484fbd0 (strcmp)
+--14800-- REDIR: 0x4a0b800 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4853440 (mempcpy)
+--14800-- REDIR: 0x4910740 (libc.so.6:realloc) redirected to 0x484dc50 (realloc)
+--14800-- REDIR: 0x4a0c000 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4852770 (memset)
+--14800-- REDIR: 0x4a04340 (libc.so.6:__memchr_avx2) redirected to 0x484fd50 (memchr)
+--14800-- REDIR: 0x4a08200 (libc.so.6:__strchr_avx2) redirected to 0x484e9f0 (index)
+==14800== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1ffefffb18 is on thread 1's stack
+==14800==  in frame #1, created by main (???:)
+==14800==  Uninitialised value was created by a stack allocation
+==14800==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800== 
+==14800== Syscall param socketcall.getsockopt(optval) points to unaddressable byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1fff001000 is not stack'd, malloc'd or (recently) free'd
+==14800== 
+==14800== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1ffefffb18 is on thread 1's stack
+==14800==  in frame #1, created by main (???:)
+==14800==  Uninitialised value was created by a stack allocation
+==14800==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800== 
+--14800-- REDIR: 0x4a03e00 (libc.so.6:__strncmp_avx2) redirected to 0x484f3e0 (strncmp)
+==14800== 
+==14800== HEAP SUMMARY:
+==14800==     in use at exit: 0 bytes in 0 blocks
+==14800==   total heap usage: 27 allocs, 27 frees, 41,143 bytes allocated
+==14800== 
+==14800== All heap blocks were freed -- no leaks are possible
+==14800== 
+==14800== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+==14800== 
+==14800== 1 errors in context 1 of 3:
+==14800== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1ffefffb18 is on thread 1's stack
+==14800==  in frame #1, created by main (???:)
+==14800==  Uninitialised value was created by a stack allocation
+==14800==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800== 
+==14800== 
+==14800== 1 errors in context 2 of 3:
+==14800== Syscall param socketcall.getsockopt(optval) points to unaddressable byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1fff001000 is not stack'd, malloc'd or (recently) free'd
+==14800== 
+==14800== 
+==14800== 1 errors in context 3 of 3:
+==14800== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
+==14800==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14800==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14800==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800==  Address 0x1ffefffb18 is on thread 1's stack
+==14800==  in frame #1, created by main (???:)
+==14800==  Uninitialised value was created by a stack allocation
+==14800==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14800== 
+==14800== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+--14801-- REDIR: 0x4a09d30 (libc.so.6:__strcpy_avx2) redirected to 0x484ee60 (strcpy)
+--14801-- REDIR: 0x4a0aa20 (libc.so.6:__stpcpy_avx2) redirected to 0x4852130 (stpcpy)
+==14801== 
+==14801== HEAP SUMMARY:
+==14801==     in use at exit: 0 bytes in 0 blocks
+==14801==   total heap usage: 174 allocs, 174 frees, 530,133 bytes allocated
+==14801== 
+==14801== All heap blocks were freed -- no leaks are possible
+==14801== 
+==14801== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+==14801== 
+==14801== 1 errors in context 1 of 3:
+==14801== Syscall param socketcall.getsockopt(optlen_out) points to uninitialised byte(s)
+==14801==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14801==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14801==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14801==  Address 0x1ffefffb18 is on thread 1's stack
+==14801==  in frame #1, created by main (???:)
+==14801==  Uninitialised value was created by a stack allocation
+==14801==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14801== 
+==14801== 
+==14801== 1 errors in context 2 of 3:
+==14801== Syscall param socketcall.getsockopt(optval) points to unaddressable byte(s)
+==14801==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14801==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14801==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14801==  Address 0x1fff001000 is not stack'd, malloc'd or (recently) free'd
+==14801== 
+==14801== 
+==14801== 1 errors in context 3 of 3:
+==14801== Syscall param socketcall.getsockopt(optlen) points to uninitialised byte(s)
+==14801==    at 0x499265E: getsockopt_syscall (getsockopt.c:29)
+==14801==    by 0x499265E: getsockopt (getsockopt.c:94)
+==14801==    by 0x10994F: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14801==  Address 0x1ffefffb18 is on thread 1's stack
+==14801==  in frame #1, created by main (???:)
+==14801==  Uninitialised value was created by a stack allocation
+==14801==    at 0x1095B2: main (in /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket)
+==14801== 
+==14801== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

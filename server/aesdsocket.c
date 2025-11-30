@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
 	getsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
 	if (optval != 0) {
-    	printf("SO_REUSEADDR enabled on sockfd!\n");
+    	printf("SO_REUSEADDR enabled on sockfd\n");
 	}
 
 	// bind() call
@@ -188,7 +188,6 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	
 
 	/********** Loop **********/
 	while ( !caught_signal ) {
@@ -198,7 +197,6 @@ int main(int argc, char *argv[]) {
 		if ( (ret = listen(sockfd, backlog)) == -1 ) {
 			syslog(LOG_ERR, "listen() call error: %s\n", strerror(errno));
 			rtn_val = -1;
-			//close(sockfd);
 			goto DONE;
 		}
 
@@ -209,7 +207,6 @@ int main(int argc, char *argv[]) {
 		if ( (spkr_fd = accept(sockfd, (struct sockaddr *)&spkr_addr, &addr_size)) == -1) {
 			syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
 			rtn_val = -1;
-			//close(sockfd);
 			goto DONE;
 		}
 
@@ -229,7 +226,6 @@ int main(int argc, char *argv[]) {
 		if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
 			printf("Error in read_until_term. Returning -1\n");
 			rtn_val = -1;
-			//close(sockfd);
 			free(line);
 			goto DONE;
 		}
@@ -259,7 +255,6 @@ int main(int argc, char *argv[]) {
 		// line has been freed but we will reuse it here
 		for (;;) {
 
-			// TODO: review all the error handling
 			line = read_until_term(wr_file_fd, '\n', return_flag);
 
 			if ( *return_flag == 5 || *return_flag == 4 ) {		// reached EOF
@@ -270,13 +265,11 @@ int main(int argc, char *argv[]) {
 				printf("***return flag: %d\n", *return_flag);
 				printf("***Memory allocation failure. Returning -1\n");
 				rtn_val = -1;
-				//close(sockfd);
 				free(line);
 				goto DONE;
 			} else if ( *return_flag == 3 ) {
 				printf("Error in read_until_term. Returning -1\n");
 				rtn_val = -1;
-				//close(sockfd);
 				free(line);
 				goto DONE;
 			} else if ( *return_flag == 0 ){		// memory was sufficient and found a newline char
@@ -305,20 +298,16 @@ int main(int argc, char *argv[]) {
 
 		close(wr_file_fd);
 		free(line);
-
 		close(spkr_fd);
 		syslog(LOG_DEBUG, "Closed connection from %s\n", ipstr);
 		printf("Closed connection from %s\n", ipstr);
 	}
 
 	/**************** Cleanup and Exit ****************/
-
-	
  
 	DONE:
 
 	close(sockfd);
-	//free(line);
 	freeaddrinfo(servinfo);		// free the linked list
 
 	if ( caught_signal == true ) {

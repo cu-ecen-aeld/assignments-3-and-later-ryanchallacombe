@@ -99,6 +99,7 @@ void signal_handler ( int signal_number )
 // 	Notes:
 // 	1. The specified terminal character *is* included in the returned buffer
 //	2. When the caller passes in a null character '\0' the function will read until EOF
+//  3. Return flags can be used to determine exactly when happened after the function returns
 // 
 // Credits/references: The below were used as reference material in developing this function	
 //						beej's 'readline' function: https://beej.us/guide/bgc/html/split/manual-memory-allocation.html
@@ -185,7 +186,7 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
 
     // We hit newline or EOF...
 
-    printf("Total chars read: %d\n", (int)tot_read);
+    //printf("Total chars read: %d\n", (int)tot_read);
 
     // Shrink to fit
     if (offset < bufsize - 1) {  // If we're short of the end
