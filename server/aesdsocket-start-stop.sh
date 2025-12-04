@@ -12,11 +12,16 @@
 case $1 in 
 	start)
 		echo "Starting aesdsocket daemon"
-		start-stop-daemon --start --name aesdsocket --startas /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket -- -d
+		
+		# native system binary location
+		# start-stop-daemon --start --name aesdsocket --startas /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket -- -d
+
+		# embedded system binay location
+		start-stop-daemon --start --name aesdsocket --startas /usr/bin -- -d
 		;;
 	stop)
 		echo "Stopping aesdsocket daemon"
-		
+
 		# SIGTERM is the dfault signal sent on stop
 		start-stop-daemon --stop --name aesdsocket		
 		;;
