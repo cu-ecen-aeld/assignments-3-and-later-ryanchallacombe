@@ -17,7 +17,7 @@ case $1 in
 		# start-stop-daemon --start --name aesdsocket --startas /home/ryan/projects/assignment-1-ryanchallacombe/server/aesdsocket -- -d
 
 		# embedded system binay location
-		start-stop-daemon --start --name aesdsocket --startas /usr/bin -- -d
+		start-stop-daemon --start --name aesdsocket --startas /usr/bin/aesdsocket -- -d
 		;;
 	stop)
 		echo "Stopping aesdsocket daemon"
