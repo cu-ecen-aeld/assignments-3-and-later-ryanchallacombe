@@ -6,20 +6,277 @@
 /////////////////////////////
 
 int writer_func(const char *fpath, const char *buf);
-void signal_handler ( int signal_number );
+void signal_handler(int signal_number);
 char *read_until_term(int fd, const char term, int *rtn_flag);
 ssize_t readLine(int fd, void *buffer, size_t n);
+void cleanup_func(int socket_fd, struct addrinfo *servinfo);
+void exit_message(void);
+void *sock_thread_func(void *thread_param);
+bool start_socket_thread(pthread_t *thread, 
+    pthread_mutex_t *mutex, 
+    struct sock_thread_data *my_thread_data,
+    int spkr_fd,
+    int wr_file_fd);
+int writer_func_fd(int fd, const char *buf);
+/*void unwind_stll(struct sock_thread_data s_td, 
+    struct sock_thread_data *head, 
+    struct sock_thread_data *nodes);
+    */
+//void unwind_stll( struct head_s func_head );
+
 
 /**********************************
 *   Globals
 **********************************/
 
 bool caught_signal;
+extern char *wr_file_path;
+//struct timespec ts;
+//struct tm tm;
+//char timestamp[100];
+//pthread_mutex_t ts_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 /////////////////////////////
 //		Function definitions
 /////////////////////////////
+
+// sock_thread_func
+// function to call when starting the socket thread
+void *sock_thread_func(void *thread_param) {
+
+    // point a local struct pointer to the the value pointed to by the argument
+    //struct thread_data* thread_func_args = (struct thread_data *) thread_param;
+    struct sock_thread_data *thread_func_args = (struct sock_thread_data*) thread_param;
+    int ret = 0;
+    int spkr_fd = thread_func_args->client_fd;
+    //printf("**** From inside thread. spkr_fd = %d\n", spkr_fd);
+
+    int fd = thread_func_args->write_file_fd;
+    //ret = fcntl(fd, F_GETFL);
+    //printf("From inside thread fcntl returns: %#06x\n", ret);
+
+
+    /************************* Receive data *************************/
+
+    char *line;
+    int *return_flag, no_flag_val = -1;     
+    return_flag = &no_flag_val;     // set return_flag to a value that the function read_until_term doesn't use
+    errno = 0;  
+    if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
+        printf("Error in read_until_term. Returning -1\n");
+        free(line);
+        //cleanup_func(sockfd, servinfo);
+        //return -1;
+    } else  {
+        //printf("***line read from the socket: %s\n", line);
+        //printf("***return flag: %d\n", *return_flag);
+
+        /************************* Obtain mutex and write to file *************************/
+        errno = 0;
+        if ( pthread_mutex_lock(thread_func_args->mutex) != 0 ) {
+            printf("Error %d (%s) locking thread data!\n", errno, strerror(errno));
+        } else {
+            // Write to file
+            printf("Mutex lock completed.\n");
+            ret = lseek(fd, (off_t) 0, SEEK_SET); 
+            //printf("lseek returns: %d\n", ret);
+            if ( (ret = writer_func_fd(thread_func_args->write_file_fd, line)) != 0) {
+                printf("writer_func returned: %d\n", ret);
+                free(line);
+                //cleanup_func(sockfd, servinfo);
+                //return -1;
+            } else {
+                printf("writer_func completed write\n");
+                free(line);
+            }
+
+            /**************** Read all data from the file and write back on the socket stream ****************/
+            // open write file
+            //int wr_file_fd = open(wr_file_path, O_RDONLY)
+            return_flag = &no_flag_val;             // reset return flag value
+
+            // set file position
+            lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
+
+            //////////// DEBUG //////////////////
+
+
+            //int ret = lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
+            //printf("lseek returns: %d\n", ret);
+            
+            /*
+            close(fd);
+            fd = open( "/home/ryan/projects/assignments-3-and-later-ryanchallacombe/server/output.txt"
+                , O_RDWR | O_APPEND);
+
+            int ret = lseek(fd, (off_t) 0, SEEK_SET); 
+            printf("lseek returns: %d\n", ret);
+
+            char c;
+            int num_read = read(fd, &c, 1);
+            printf("read_until_term num_read %d and c: %c\n", num_read, c);
+            */
+            //////////// DEBUG //////////////////
+
+            // loop to read from file and write to socket stream
+            // line has been freed but we will reuse it here
+            for (;;) {
+
+                //printf("Write file fd in sock_thread_func: %d\n", thread_func_args->write_file_fd);
+                line = read_until_term(thread_func_args->write_file_fd, '\n', return_flag);
+
+                if ( *return_flag == 5 || *return_flag == 4 ) {             // reached EOF, break out of the loop
+                    //printf("***return flag: %d\n", *return_flag);
+                    //printf("***reached EOF\n");
+                    thread_func_args->thread_success = true; 
+                    break;
+                } else if ( *return_flag == 1 || *return_flag == 2 ) {      // malloc or realloc failed
+                    printf("***return flag: %d\n", *return_flag);
+                    printf("***Memory allocation failure.\n");
+                    free(line);
+                    break;
+                    //cleanup_func(sockfd, servinfo);
+                    //return -1;
+                } else if ( *return_flag == 3 ) {
+                    printf("Error in read_until_term. Return flag: %d\n", *return_flag);
+                    free(line);
+                    break;
+                    //cleanup_func(sockfd, servinfo);
+                    //return -1;
+                } else if ( *return_flag == 0 ){                            // memory was sufficient and found a newline char
+                    //printf("***line: %s\n", line);
+                    //printf("***return flag: %d\n", *return_flag);
+
+                    // Write to socket
+                    int len, bytes_sent;
+                    len = strlen(line);
+                    if ( (bytes_sent = send(spkr_fd, line, len, 0)) != len ) {
+                        printf("Error, bytes transmission incomplete.\n");
+                        free(line);
+                        //cleanup_func(sockfd, servinfo);
+                        //return -1;
+                    }
+                    
+                    //printf("***sent: %d bytes\n", (uint) bytes_sent);
+                } else {
+                    break;      // this should never be reached
+                } 
+
+                free(line);
+            }
+
+            if ( pthread_mutex_unlock(thread_func_args->mutex) != 0 ) {
+                errno = 0;
+                printf("Error %d (%s) unlocking thread data!\n",errno,strerror(errno));
+            } else {
+                printf("Mutex unlock completed.\n");
+                thread_func_args->thread_success = true;               
+            }
+        }
+    }
+    thread_func_args->thread_complete = true;
+    return thread_param;
+}
+
+bool start_socket_thread(pthread_t *thread, 
+    pthread_mutex_t *mutex, 
+    struct sock_thread_data *my_thread_data,
+    int spkr_fd,
+    int wr_file_fd)
+{
+    my_thread_data->tid = 0;        // this will get populated when the thread begins
+    my_thread_data->mutex = mutex;
+    my_thread_data->thread_complete = false;
+    my_thread_data->thread_success = false;
+    my_thread_data->client_fd = spkr_fd;
+    my_thread_data->write_file_fd = wr_file_fd;
+
+    int ret = 0;                
+    ret = pthread_create(thread, NULL, sock_thread_func, my_thread_data);
+    if (ret != 0) {
+        printf("*** pthread_create failed with error %d creating thread\n", ret);
+        return false;
+    }
+
+    my_thread_data->tid = *thread; 
+
+    return true;
+}
+
+
+// Print a message to inform of exit
+void exit_message(void)
+{
+    /* Let user know program is ending */
+    //syslog(LOG_DEBUG, "***** Exiting aesdsocket program\n");
+    printf("***** Exiting aesdsocket program *****\n");
+    return;
+}
+
+// Close socket and addr info linked list, inform if signal was caught, print exit message
+void cleanup_func(int socket_fd, struct addrinfo *servinfo)
+{
+    close(socket_fd);
+    freeaddrinfo(servinfo);     // free the server linked list
+
+    if ( caught_signal == true ) {
+        syslog(LOG_DEBUG, "Caught signal, exiting\n");
+        printf("Caught signal, exiting\n");
+    }
+
+    exit_message();
+    return;
+}
+
+// Same as writer_func() but accepts an open file descriptor, fd
+// fd must be already open with WR access at a minimum
+// the fd is left open after the function returns
+// it's up to the caller to open and close the fd
+int writer_func_fd(int fd, const char *buf)
+{   
+    // ASSUME SYSLOG IS OPEN
+
+    //syslog( LOG_DEBUG, "*** Starting writer_func ***\n" );
+    
+    //int fd;
+    ssize_t bytes_written;
+    int buf_bytes = strlen(buf);
+    
+    /*
+    fd = open( fpath, O_RDWR | O_APPEND);
+    if ( fd == -1 ) {       
+        // Create file
+        syslog( LOG_ERR, "Creating file %s.\n", fpath);
+        errno = 0;
+        fd = creat( fpath, S_IRWXU | S_IRWXG | S_IRWXO );
+        
+        // Check for errors
+        if ( (errno != 0) || (fd == -1) ) {
+            char *error_str = strerror(errno);
+            syslog( LOG_ERR, "ERRNO string: %s\n", error_str );
+            syslog( LOG_ERR, "Error creating file %s.\n", fpath );
+            syslog( LOG_ERR, "Returning with status = 1.\n" );
+            return 1;
+        }
+    }*/
+    
+    /* Write to file and error check */
+    syslog( LOG_DEBUG, "Writing %s to file\n", buf);
+    bytes_written = write( fd, buf, buf_bytes );
+    if ( bytes_written != buf_bytes ) {
+        syslog( LOG_ERR, "Error writing to file.\n");
+        syslog( LOG_ERR, "Number of bytes in buffer = %i\n", buf_bytes);
+        syslog( LOG_ERR, "Bytes written (returned from write()) = %li\n", bytes_written);
+        syslog( LOG_ERR, "Returning from writer_func with status = -1.\n" );
+        return -1;
+    }
+    
+    //close( fd );
+    
+    syslog( LOG_DEBUG, "*** Returning from writer_func with status = 0 ***\n" );
+    return 0;
+}
 
 int writer_func(const char *fpath, const char *buf)
 {	
@@ -65,12 +322,14 @@ int writer_func(const char *fpath, const char *buf)
 	syslog( LOG_DEBUG, "*** Returning from writer_func with status = 0 ***\n" );
 	return 0;
 }
+
+
 // TODO
 // Gracefully exits when SIGINT or SIGTERM is received, completing any open connection operations, 
 // closing any open sockets, and deleting the file /var/tmp/aesdsocketdata.
 // Logs message to the syslog “Caught signal, exiting” when SIGINT or SIGTERM is received.
 
-void signal_handler ( int signal_number )
+void signal_handler(int signal_number)
 {
     //
     // Save a copy of errno so we can restore it later.  See https://pubs.opengroup.org/onlinepubs/9699919799/
@@ -124,6 +383,9 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     char *buf;        		
     char c;            		// The character we've read in
 
+    //int ret = fcntl(fd, F_GETFL);
+    //printf("From inside read_until_term fcntl returns: %#06x\n", ret);    // 0x8402
+
     buf = malloc(bufsize);  // Allocate initial buffer
 
     if (buf == NULL) {   		// Error check
@@ -151,14 +413,22 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
 
     	}
 
+        // set file position
+        //int ret = lseek(fd, (off_t) 0, SEEK_SET); 
+        //printf("lseek returns: %d\n", ret);
+        //ret = fcntl(fd, F_GETFL);
+        //printf("fcntl returns: %#06x\n", ret);
+
     	// read a single character 
     	errno = 0;
     	num_read = read(fd, &c, 1);
+        //printf("read_until_term read c: %c\n", c);
         // printf("read returned: %d\n", (uint)num_read);
     	if ( num_read == -1) {
     		if (errno == EINTR)         // Interrupted --> restart read()
                 continue;
             else {
+                printf("read errno %d (%s) in read_until_term\n", errno, strerror(errno));
             	free(buf);
                 *rtn_flag = 3; 
                 return NULL;              // Some other error 
@@ -261,3 +531,25 @@ ssize_t readLine(int fd, void *buffer, size_t n)
     *buf = '\0';
     return totRead;
 } 
+
+// Remove and free each node from the socket thread linked list
+//void unwind_stll(struct sock_thread_data s_td, struct sock_thread_data *head, struct sock_thread_data nodes) 
+/*
+void unwind_stll( struct head_s *func_head ) 
+{
+
+    if (func_head->)
+
+    SLIST_HEAD(head_s, sock_thread_data) head;
+    head = func_head;
+
+    head = head;    
+ 
+    SLIST_FOREACH(s_td, head, nodes) 
+    {
+
+        // remove this element from the linked list
+        SLIST_REMOVE(head, s_td, sock_thread_data, nodes);
+        free(s_td);
+    }
+}*/

@@ -1,0 +1,53 @@
+code:
+SLIST_HEAD(head_s, sock_thread_data) head;
+lib:
+#define SLIST_HEAD(name, type)                                               \
+    struct name {                                                            \
+        struct type *slh_first; /* first element */                          \
+    }
+result:
+
+struct head_s {struct sock_thread_data *slh_first} head;
+
+***********************************************
+code:
+SLIST_INIT(&head);
+
+lib:
+
+#define SLIST_INIT(head) do {                                                \
+    (head)->slh_first = SLIST_END(head);                                     \
+} while (0)
+
+#define SLIST_END(head) NULL
+
+result:
+head->slh_first = NULL;
+
+***********************************************
+
+code:
+SLIST_INSERT_HEAD(&head, local_sock_thread_data, nodes);
+
+lib:
+#define SLIST_INSERT_HEAD(head, elm, field) do {                             \
+    (elm)->field.sle_next = (head)->slh_first;                               \
+    (head)->slh_first = (elm);                                               \
+} while (0)
+
+resulting code:
+local_sock_thread_data->nodes.sle_next = &head->sle_first
+&head->sle_first = local_sock_thread_data
+
+
+***********************************************
+code:
+SLIST_FOREACH(local_sock_thread_data, &head, nodes) 
+
+lib:
+#define SLIST_FOREACH(var, head, field)                                      \
+    for ((var) = (head)->slh_first; (var); (var) = (var)->field.sle_next)
+
+resulting code:
+for ( local_sock_thread_data = &head->slh_first; local_sock_thread_data; local_sock_thread_data = local_sock_thread_data->nodes.sle_next )
+

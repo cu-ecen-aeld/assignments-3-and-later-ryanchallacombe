@@ -1,11 +1,34 @@
 /*
 ** aesdsocket.c
 **
-** Advanced Embedded Linux Programming: assignment 5 part 1
+** Advanced Embedded Linux Programming: assignment 6 part 1
+**		Updates to assignment 5 part 1
 **
 **		writer: ryan challacombe
-**		date:	11/21/2025
+**		date:	2/24/2026
 */
+
+/************* 	TESTING *******************
+
+Assignment 5 part 1
+Verify the sample test script “sockettest.sh” successfully completes against your native compiled 
+application each time your application is closed and restarted.  You can run this manually outside 
+the ./full-test.sh script by:
+•	Starting your aesdsocket application
+•	Executing the sockettest.sh script from the assignment-autotest subdirectory:
+		/home/ryan/projects/assignments-3-and-later-ryanchallacombe/assignment-autotest/test/assignment5
+•	Stopping your aesdsocket application.
+
+Assignment 6 part 1
+3. Use the updated sockettest.sh script (in the assignment-autotest/test/assignment6 subdirectory). 
+You can run this manually outside the `./full-test.sh` script by:
+a. Starting your aesdsocket application
+b. Executing the sockettest.sh script from the assignment-autotest subdirectory.
+	/home/ryan/projects/assignments-3-and-later-ryanchallacombe/assignment-autotest/test/assignment6
+c. Stopping your aesdsocket application.
+
+
+************* 	TESTING *******************/
 
 /************* 	REFERENCE INFO *******************
 
@@ -44,20 +67,28 @@ int recv(int sockfd, void *buf, int len, int flags);
 ************* 	REFERENCE INFO *******************/
 
 #include "include/utils.h"
+#include "time_functions_shared.h"
 
 
 /**********************************
 *	Defines
 **********************************/
 
-#define MAXDATASIZE		1024						// max number of bytes
-#define RECVFILE		"/var/tmp/aesdsocketdata"	// file for storing received messages
+#define MAXDATASIZE		1024							// max number of bytes
+//#define RECVFILE		"/var/tmp/aesdsocketdata"		// file for storing received messages
+#define RECVFILE		"/home/ryan/projects/assignments-3-and-later-ryanchallacombe/server/output.txt"	// file for storing received messages
 
 /**********************************
 *	Globals
 **********************************/
 
 extern bool caught_signal;			// defined in utils.c
+char *wr_file_path  = RECVFILE;
+extern struct timespec ts;
+extern struct tm tm;
+extern char timestamp[100];
+//extern pthread_mutex_t ts_mutex;
+//extern struct thread_data;			// timestamp thread
 
 /**********************************
 *	Main
@@ -69,11 +100,12 @@ int main(int argc, char *argv[]) {
 	openlog(NULL, 0, LOG_USER);
 
 	/* Setup a return value for the program */
-	int rtn_val = 0;
+	// int rtn_val = 0;
 
 	/* Let user know program is starting */
 	const char *prog_name = argv[0];
-	syslog(LOG_DEBUG, "***** Starting program: %s\n", prog_name);
+	//syslog(LOG_DEBUG, "***** Starting program: %s\n", prog_name);
+	printf("***** Starting program: %s\n", prog_name);
 
 
 	/************************* Signal handler setup *************************/
@@ -85,18 +117,17 @@ int main(int argc, char *argv[]) {
 
     if( sigaction(SIGTERM, &new_action, NULL) != 0 ) {
         printf("Error %d (%s) registering for SIGTERM",errno,strerror(errno));
-        rtn_val = -1;
-        goto DONE;
+        exit_message();
+        return -1;
     }
     if( sigaction(SIGINT, &new_action, NULL) ) {
         printf("Error %d (%s) registering for SIGINT",errno,strerror(errno));
-        rtn_val = -1;
-        goto DONE;
+        exit_message();
+        return -1;
     }
 
 
     /************************* Remove write file if it exists *************************/
-	char *wr_file_path = RECVFILE;
 	errno = 0;
 	FILE *fp;
 	if ( (fp = fopen(wr_file_path, "r")) != NULL ) {
@@ -123,8 +154,8 @@ int main(int argc, char *argv[]) {
 	if ( (ret = getaddrinfo(NULL, port, &hints, &servinfo)) != 0 ) {
 		// log error
 		printf("getaddrinfo() call error: %s\n", gai_strerror(ret));
-		rtn_val = -1;
-		goto DONE;
+		exit_message();
+        return -1;
 	}
 
 	// socket call
@@ -132,10 +163,11 @@ int main(int argc, char *argv[]) {
 	errno = 0;
 	if ( (sockfd = socket(servinfo->ai_family, servinfo-> ai_socktype, servinfo->ai_protocol)) == -1 ) {
 		printf("socket() call error: %s\n", strerror(errno));
-		rtn_val = -1;
-		goto DONE;
+		exit_message();
+        return -1;
 	}
-	syslog(LOG_DEBUG, "***** Socket file set with descriptor: %d\n", sockfd);
+	//syslog(LOG_DEBUG, "***** Socket file set with descriptor: %d\n", sockfd);
+	printf("***** Socket file set with descriptor: %d\n", sockfd);
 
 	// set SO_REUSEADDR on a socket to true (1):
 	int optval = 1;
@@ -153,9 +185,8 @@ int main(int argc, char *argv[]) {
 	errno = 0;
 	if ( (ret = bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen)) == -1 ) {
 		printf("bind() call error: %s\n", strerror(errno));
-		rtn_val = -1;
-		close(sockfd);
-		goto DONE;
+		cleanup_func(sockfd, servinfo);
+		return -1;
 	} 
 
 	// setup for listening / accepting / while loop
@@ -177,147 +208,203 @@ int main(int argc, char *argv[]) {
 			pid = fork();
 			if ( pid == -1) {			// fork error
 				perror("fork");
-				rtn_val = -1;
-				goto DONE;
+				cleanup_func(sockfd, servinfo);
+				return -1;
 			} else if ( pid != 0 ) {	// pid = 0 is child pid
 
 				// exit parent process
 				printf("Exiting parent process\n");
-				rtn_val = 0;
-				goto DONE;
+				cleanup_func(sockfd, servinfo);
+				return 0;
 			}
 		}
 	}
 
+	/************* Initialize SLIST **************/
+	// create data type for queue head
+	SLIST_HEAD(head_s, sock_thread_data) head;
+
+	// initialize the head before use
+	SLIST_INIT(&head);
+
+	/************* Setup vars **************/
+	struct sock_thread_data *local_sock_thread_data = NULL;			// setup thread data struct
+	pthread_mutex_t fd_mutex = PTHREAD_MUTEX_INITIALIZER;			// setup mutex that will be shared by the threads
+	pthread_t my_thread = 0;	
+
+	// Open write file
+	int fd = open( wr_file_path, O_RDWR | O_APPEND);
+	if ( fd == -1 ) {		
+		// Create file
+		//syslog( LOG_ERR, "Creating file %s.\n", wr_file_path);
+		printf("Creating file %s.\n", wr_file_path);
+		errno = 0;
+		fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
+		// For some reason, file access is not correct, so close and reopen as below...
+		close(fd);
+		fd = open( wr_file_path, O_RDWR | O_APPEND);
+		//printf("Write file fd in main(): %d\n", fd);
+		
+		// Check for errors
+		if ( (errno != 0) || (fd == -1) ) {
+			//char *error_str = strerror(errno);
+			//syslog( LOG_ERR, "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
+			//syslog( LOG_ERR, "Returning with status = 1.\n" );
+			printf( "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
+			printf( "Returning with status = 1.\n" );
+			return 1;
+		}
+	}
+	//ret = fcntl(fd, F_GETFL);
+    //printf("From inside main() fcntl returns: %#06x\n", ret);
+
+
+	/************* Start Timestamp thread **************/
+	// copy/pasting function start_timestamp_wr_thread() text here
+	struct thread_data td;
+    struct sigevent sev;
+    //bool success = false;
+    timer_t timerid;
+    memset(&td, 0, sizeof(struct thread_data));
+    //printf("sizeof(struct thread_data): %lu\n", sizeof(struct thread_data));
+
+
+    	td.lock = fd_mutex;
+
+        //printf("td->lock = %d\n", (int) td.lock);
+        td.write_file_fd = fd;
+        int clock_id = CLOCK_MONOTONIC;
+        memset(&sev,0,sizeof(struct sigevent));
+        //printf("sizeof(struct sigevent): %lu\n", sizeof(struct sigevent));
+
+        // Setup a call to timer_thread passing in the td structure as the sigev_value argument
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_value.sival_ptr = &td;            // point sival to thread_data
+        sev.sigev_notify_function = timer_thread;   // function to run when the timer fires...
+
+        if ( timer_create(clock_id, &sev, &timerid) != 0 ) {
+            printf("Error %d (%s) creating timer!\n",errno,strerror(errno));
+        } 
+
+        struct timespec start_time;
+        if ( ! setup_timer(clock_id, timerid, TIMER_PERIOD_MS, TIMER_PERIOD_SEC, &start_time) ) 
+        {
+            printf("Error setting up timer.\n");
+        }
+
+
 	/********** Loop **********/
 	while ( !caught_signal ) {
 
-		// listen() call
+		// listen() call. This will block until a connection is established
 		errno = 0;
 		if ( (ret = listen(sockfd, backlog)) == -1 ) {
-			syslog(LOG_ERR, "listen() call error: %s\n", strerror(errno));
-			rtn_val = -1;
-			goto DONE;
+			//syslog(LOG_ERR, "listen() call error: %s\n", strerror(errno));
+			printf( "listen() call error: %s\n", strerror(errno));
+			cleanup_func(sockfd, servinfo);
+			return -1;
 		}
-
-		printf("Server set on port %s. Listening for client\n", port);
+		else {printf("Server set on port %s. Listening for client\n", port);}
 
 		// accept() call
 		errno = 0;
 		if ( (spkr_fd = accept(sockfd, (struct sockaddr *)&spkr_addr, &addr_size)) == -1) {
-			syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
-			rtn_val = -1;
-			goto DONE;
+			//syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
+			printf("accept() call error: %s\n", strerror(errno));
+			cleanup_func(sockfd, servinfo);	
+			return -1;
 		}
 
 		// Print address of connected speaker
 		getpeername(spkr_fd, (struct sockaddr *)&spkr_addr, &addr_size);
 		inet_ntop(AF_INET, (struct sockaddr_in *)&spkr_addr, ipstr, INET_ADDRSTRLEN);
-	    syslog(LOG_DEBUG, "Accepted connection from %s\n", ipstr);
+	    //syslog(LOG_DEBUG, "Accepted connection from %s\n", ipstr);
 	    printf("Accepted connection from %s\n", ipstr);
 
-	    /************************* Receive data and write to file *************************/
+		// malloc struct socket_thread_data
+		local_sock_thread_data = malloc( sizeof( struct sock_thread_data ));
+		if (local_sock_thread_data == NULL) 
+	    {
+	        printf("malloc error. Exiting\n");
+	        cleanup_func(sockfd, servinfo);
+	        return -1;
+	    }
+	    memset(local_sock_thread_data, 0, sizeof(struct sock_thread_data));
 
-	    // start receiving data
-	    char *line;
-	    int *return_flag, val = -1;		
-	    return_flag = &val;		// set return_flag to a value that the function read_until_term doesn't use
-	    errno = 0;	
-		if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
-			printf("Error in read_until_term. Returning -1\n");
-			rtn_val = -1;
-			free(line);
-			goto DONE;
+		// insert into the linked list
+	    SLIST_INSERT_HEAD(&head, local_sock_thread_data, nodes);
+
+		// call function to start thread
+		printf("Starting thread...\n");
+		if ( ! start_socket_thread(&my_thread, &fd_mutex, local_sock_thread_data, spkr_fd, fd) ) 
+		{
+			printf("Error starting thread. Exiting...");
+			free(local_sock_thread_data);
+			cleanup_func(sockfd, servinfo);
+	        return -1;
 		}
 
-		//printf("***line read from the socket: %s\n", line);
-		//printf("***return flag: %d\n", *return_flag);
+		printf("Thread started. Thread ID: %u\n", (unsigned int) my_thread);
 
-		// Write to file
-		if ( (ret = writer_func(wr_file_path, line)) != 0) {
-			printf("writer_func returned: %d\n", ret);
-			rtn_val = -1;
-			free(line);
-			goto DONE;
-		}
-		
-		//printf("writer_func completed write\n");
+		// reset local values, remain unchanged in linked list??
+		local_sock_thread_data = NULL;
+		my_thread = 0;
 
-		free(line);
+		// loop through the linked list to look for completed threads
+		SLIST_FOREACH(local_sock_thread_data, &head, nodes) 
+		{
+			// TODO: add logic to handle thread completed w/o success
+			// if a thread is complete and successful, join it, remove it from linked list, then free it
+			//  if complete but not successful.... do what??
+			if ( local_sock_thread_data->thread_success )	
+			{
+				printf( "Thread %u completed with thread_success = %d. Joining, removing, and freeing it...\n", 
+					(unsigned int) local_sock_thread_data->tid, 
+					(unsigned int) local_sock_thread_data->thread_success );
 
-		/**************** Read all data from the file and write back on the socket stream ****************/
-
-		// open write file
-		int wr_file_fd = open(wr_file_path, O_RDONLY);
-		*return_flag = val;		// reset return flag value
-
-		// loop to read from file and write to socket stream
-		// line has been freed but we will reuse it here
-		for (;;) {
-
-			line = read_until_term(wr_file_fd, '\n', return_flag);
-
-			if ( *return_flag == 5 || *return_flag == 4 ) {		// reached EOF
-				//printf("***return flag: %d\n", *return_flag);
-				//printf("***reached EOF\n");
-				break;
-			} else if ( *return_flag == 1 || *return_flag == 2 ) {			// malloc or realloc failed
-				printf("***return flag: %d\n", *return_flag);
-				printf("***Memory allocation failure. Returning -1\n");
-				rtn_val = -1;
-				free(line);
-				goto DONE;
-			} else if ( *return_flag == 3 ) {
-				printf("Error in read_until_term. Returning -1\n");
-				rtn_val = -1;
-				free(line);
-				goto DONE;
-			} else if ( *return_flag == 0 ){		// memory was sufficient and found a newline char
-				//printf("***line: %s\n", line);
-				//printf("***return flag: %d\n", *return_flag);
-
-				// Write to socket
-				int len, bytes_sent;
-				len = strlen(line);
-				if ( (bytes_sent = send(spkr_fd, line, len, 0)) != len ) {
-					printf("Error, bytes transmission incomplete.\n");
-					rtn_val = -1;
-					//close(sockfd);
-					free(line);
-					goto DONE;
+				ret = 0;
+				ret = pthread_join(local_sock_thread_data->tid, NULL);
+				if ( ret != 0) 
+				{
+					printf("Attempt to join thread failed.\n");
+					//free(local_sock_thread_data);
+					//return 1;
 				}
-				
-				//printf("***sent: %d bytes\n", (uint) bytes_sent);
+
+				// remove this element from the linked list and free it
+				SLIST_REMOVE(&head, local_sock_thread_data, sock_thread_data, nodes);
+				free(local_sock_thread_data);
 			} else {
-				break;		// this should never be reached
+				//printf("no threads completed\n");
 			}
 
-			free(line);
-
 		}
 
-		close(wr_file_fd);
-		free(line);
-		close(spkr_fd);
-		syslog(LOG_DEBUG, "Closed connection from %s\n", ipstr);
-		printf("Closed connection from %s\n", ipstr);
-	}
+		//close(wr_file_fd);
+		//free(line);
+		//close(spkr_fd);
+		//syslog(LOG_DEBUG, "Closed connection from %s\n", ipstr);
+		//printf("Closed connection from %s\n", ipstr);
+
+	}	// end While loop
 
 	/**************** Cleanup and Exit ****************/
- 
-	DONE:
 
-	close(sockfd);
-	freeaddrinfo(servinfo);		// free the linked list
+	cleanup_func(sockfd, servinfo);
 
-	if ( caught_signal == true ) {
-		syslog(LOG_DEBUG, "Caught signal, exiting\n");
-		printf("Caught signal, exiting\n");
-	}
+	// unwind the linked list
+	printf("Freeing socket thread linked list.\n");
+	struct sock_thread_data *e = NULL;
+	e = malloc(sizeof(struct sock_thread_data));
+	// free the elements from the queue
+	printf("Freeing socket thread linked list.\n");
+    while ( !SLIST_EMPTY(&head) )
+    {
+        e = SLIST_FIRST(&head);
+        SLIST_REMOVE_HEAD(&head, nodes);
+        free(e);
+        e = NULL;
+    }
 
-	/* Let user know program is ending */
-	syslog(LOG_DEBUG, "***** Exiting program %s with return value: %d\n", prog_name, rtn_val);
-	printf("***** Exiting program %s with return value: %d\n", prog_name, rtn_val);
-
-	return rtn_val;
+	return 0;
 }

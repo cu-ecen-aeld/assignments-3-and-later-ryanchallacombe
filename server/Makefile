@@ -1,6 +1,8 @@
 CFLAGS = -Wall -Werror -Iinclude/
 UTILS_HEADER = include/utils.h
 UTILS_SOURCE = include/utils.c
+TIMESTAMP_HEADER = include/time_functions_shared.h
+TIMESTAMP_SOURCE = include/timestamp_thread.c
 
 ## Invoke cross compilation with: >> make CROSS_COMPILE=aarch64-none-linux-gnu- all
 
@@ -9,16 +11,16 @@ UTILS_SOURCE = include/utils.c
 
 all: aesdsocket
 
-aesdsocket: aesdsocket.o utils.o
+aesdsocket: aesdsocket.o utils.o timestamp_thread.o
 ifdef CROSS_COMPILE
-	$(CROSS_COMPILE)gcc ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+	$(CROSS_COMPILE)gcc ${CFLAGS} -o aesdsocket aesdsocket.o utils.o timestamp_thread.o
 else
-	${CC} ${CFLAGS} -o aesdsocket aesdsocket.o utils.o 
+	${CC} ${CFLAGS} -o aesdsocket aesdsocket.o utils.o timestamp_thread.o
 endif
 
 aesdsocket.o: aesdsocket.c ${UTILS_HEADER}
 ifdef CROSS_COMPILE
-	$(CROSS_COMPILE)gcc ${CFLAGS} -c aesdsocket.c
+	$(CROSS_COMPILE)gcc ${CFLAGS} -c aesdsocket.c 
 else
 	${CC} ${CFLAGS} -c aesdsocket.c
 endif
@@ -30,6 +32,15 @@ else
 	${CC} ${CFLAGS} -c ${UTILS_SOURCE}
 endif
 
+timestamp_thread.o: ${TIMESTAMP_SOURCE} ${TIMESTAMP_HEADER}
+ifdef CROSS_COMPILE
+	$(CROSS_COMPILE)gcc ${CFLAGS} -c ${TIMESTAMP_SOURCE}
+else
+	${CC} ${CFLAGS} -c ${TIMESTAMP_SOURCE}
+endif
+
+
 clean:
 	rm -f aesdsocket *.o
 	rm -f utils *.o
+	rm -f timestamp_thread *.o
