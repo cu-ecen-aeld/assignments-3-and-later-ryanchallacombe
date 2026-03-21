@@ -31,7 +31,7 @@ struct thread_data
 
 /************** FUNCTION PROTOTYPES *****************/
 
-int start_timestamp_wr_thread(int fd);
+//int start_timestamp_wr_thread(int fd);
 void timer_thread ( union sigval sigval );
 bool setup_timer( int clock_id,
                          timer_t timerid, 

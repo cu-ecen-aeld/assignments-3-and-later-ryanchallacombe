@@ -32,8 +32,6 @@ struct sock_thread_data {
     SLIST_ENTRY( sock_thread_data ) nodes;
 };
 
-//struct head_s {struct sock_thread_data *slh_first;};
-
 int writer_func(const char *fpath, const char *buf);
 void signal_handler ( int signal_number );
 char *read_until_term(int fd, const char term, int *rtn_flag);
@@ -47,13 +45,6 @@ bool start_socket_thread(pthread_t *thread,
     int spkr_fd,
     int wr_file_fd);
 int writer_func_fd(int fd, const char *buf);
-/*void unwind_stll(struct sock_thread_data s_td, 
-    struct sock_thread_data *head, 
-    struct sock_thread_data *nodes);
-    */
-//void unwind_stll( struct head_s func_head );
-
-
 
 
 #endif

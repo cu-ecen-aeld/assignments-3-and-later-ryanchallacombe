@@ -42,5 +42,3 @@ endif
 
 clean:
 	rm -f aesdsocket *.o
-	rm -f utils *.o
-	rm -f timestamp_thread *.o

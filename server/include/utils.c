@@ -18,11 +18,6 @@ bool start_socket_thread(pthread_t *thread,
     int spkr_fd,
     int wr_file_fd);
 int writer_func_fd(int fd, const char *buf);
-/*void unwind_stll(struct sock_thread_data s_td, 
-    struct sock_thread_data *head, 
-    struct sock_thread_data *nodes);
-    */
-//void unwind_stll( struct head_s func_head );
 
 
 /**********************************
@@ -31,11 +26,6 @@ int writer_func_fd(int fd, const char *buf);
 
 bool caught_signal;
 extern char *wr_file_path;
-//struct timespec ts;
-//struct tm tm;
-//char timestamp[100];
-//pthread_mutex_t ts_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 /////////////////////////////
 //		Function definitions
@@ -50,12 +40,8 @@ void *sock_thread_func(void *thread_param) {
     struct sock_thread_data *thread_func_args = (struct sock_thread_data*) thread_param;
     int ret = 0;
     int spkr_fd = thread_func_args->client_fd;
-    //printf("**** From inside thread. spkr_fd = %d\n", spkr_fd);
 
     int fd = thread_func_args->write_file_fd;
-    //ret = fcntl(fd, F_GETFL);
-    //printf("From inside thread fcntl returns: %#06x\n", ret);
-
 
     /************************* Receive data *************************/
 
@@ -78,7 +64,7 @@ void *sock_thread_func(void *thread_param) {
             printf("Error %d (%s) locking thread data!\n", errno, strerror(errno));
         } else {
             // Write to file
-            printf("Mutex lock completed.\n");
+            //printf("Mutex lock completed.\n");
             ret = lseek(fd, (off_t) 0, SEEK_SET); 
             //printf("lseek returns: %d\n", ret);
             if ( (ret = writer_func_fd(thread_func_args->write_file_fd, line)) != 0) {
@@ -87,7 +73,7 @@ void *sock_thread_func(void *thread_param) {
                 //cleanup_func(sockfd, servinfo);
                 //return -1;
             } else {
-                printf("writer_func completed write\n");
+                //printf("writer_func completed write\n");
                 free(line);
             }
 
@@ -98,26 +84,6 @@ void *sock_thread_func(void *thread_param) {
 
             // set file position
             lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
-
-            //////////// DEBUG //////////////////
-
-
-            //int ret = lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
-            //printf("lseek returns: %d\n", ret);
-            
-            /*
-            close(fd);
-            fd = open( "/home/ryan/projects/assignments-3-and-later-ryanchallacombe/server/output.txt"
-                , O_RDWR | O_APPEND);
-
-            int ret = lseek(fd, (off_t) 0, SEEK_SET); 
-            printf("lseek returns: %d\n", ret);
-
-            char c;
-            int num_read = read(fd, &c, 1);
-            printf("read_until_term num_read %d and c: %c\n", num_read, c);
-            */
-            //////////// DEBUG //////////////////
 
             // loop to read from file and write to socket stream
             // line has been freed but we will reuse it here
@@ -164,13 +130,14 @@ void *sock_thread_func(void *thread_param) {
                 } 
 
                 free(line);
+                line = NULL;
             }
 
             if ( pthread_mutex_unlock(thread_func_args->mutex) != 0 ) {
                 errno = 0;
                 printf("Error %d (%s) unlocking thread data!\n",errno,strerror(errno));
             } else {
-                printf("Mutex unlock completed.\n");
+                //printf("Mutex unlock completed.\n");
                 thread_func_args->thread_success = true;               
             }
         }
@@ -217,7 +184,9 @@ void exit_message(void)
 // Close socket and addr info linked list, inform if signal was caught, print exit message
 void cleanup_func(int socket_fd, struct addrinfo *servinfo)
 {
-    close(socket_fd);
+    if ( close(socket_fd) != 0 ) {
+        printf("error closing socket\n");
+    }
     freeaddrinfo(servinfo);     // free the server linked list
 
     if ( caught_signal == true ) {
@@ -243,24 +212,6 @@ int writer_func_fd(int fd, const char *buf)
     ssize_t bytes_written;
     int buf_bytes = strlen(buf);
     
-    /*
-    fd = open( fpath, O_RDWR | O_APPEND);
-    if ( fd == -1 ) {       
-        // Create file
-        syslog( LOG_ERR, "Creating file %s.\n", fpath);
-        errno = 0;
-        fd = creat( fpath, S_IRWXU | S_IRWXG | S_IRWXO );
-        
-        // Check for errors
-        if ( (errno != 0) || (fd == -1) ) {
-            char *error_str = strerror(errno);
-            syslog( LOG_ERR, "ERRNO string: %s\n", error_str );
-            syslog( LOG_ERR, "Error creating file %s.\n", fpath );
-            syslog( LOG_ERR, "Returning with status = 1.\n" );
-            return 1;
-        }
-    }*/
-    
     /* Write to file and error check */
     syslog( LOG_DEBUG, "Writing %s to file\n", buf);
     bytes_written = write( fd, buf, buf_bytes );
@@ -271,8 +222,6 @@ int writer_func_fd(int fd, const char *buf)
         syslog( LOG_ERR, "Returning from writer_func with status = -1.\n" );
         return -1;
     }
-    
-    //close( fd );
     
     syslog( LOG_DEBUG, "*** Returning from writer_func with status = 0 ***\n" );
     return 0;
@@ -331,9 +280,7 @@ int writer_func(const char *fpath, const char *buf)
 
 void signal_handler(int signal_number)
 {
-    //
     // Save a copy of errno so we can restore it later.  See https://pubs.opengroup.org/onlinepubs/9699919799/
-    //
     int errno_saved = errno;
 
     if ( (signal_number == SIGINT) || (signal_number == SIGTERM) )
@@ -341,8 +288,6 @@ void signal_handler(int signal_number)
 
     errno = errno_saved;
 }
-
-
 
 
 // read_until_term()
@@ -382,9 +327,6 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     int bufsize = INITIAL_BUFFER_SIZE;  
     char *buf;        		
     char c;            		// The character we've read in
-
-    //int ret = fcntl(fd, F_GETFL);
-    //printf("From inside read_until_term fcntl returns: %#06x\n", ret);    // 0x8402
 
     buf = malloc(bufsize);  // Allocate initial buffer
 

@@ -19,14 +19,6 @@ struct timespec ts;
 struct tm tm;
 char timestamp[100];
 
-// moved to header file
-/*
-struct thread_data
-{
-    int write_file_fd;              // fd of the file to write to
-    pthread_mutex_t lock;           // a mutex to use when accessing the structure
-};*/
-
 /************** FUNCTION PROTOTYPES *****************/
 
 void timer_thread ( union sigval sigval );
@@ -35,7 +27,7 @@ bool setup_timer( int clock_id,
                          unsigned int timer_period_ms, 
                          unsigned int timer_period_sec,
                          struct timespec *start_time);
-int start_timestamp_wr_thread(int fd);
+//int start_timestamp_wr_thread(int fd);
 
 
 /************** FUNCTIONS *****************/
@@ -47,6 +39,7 @@ int start_timestamp_wr_thread(int fd);
 */
 void timer_thread ( union sigval sigval )
 {
+    //printf("starting timer_thread\n");
     struct thread_data *td = (struct thread_data*) sigval.sival_ptr;
     errno = 0;
     if ( pthread_mutex_lock(&td->lock) != 0 ) {
@@ -65,12 +58,11 @@ void timer_thread ( union sigval sigval )
         {
             //printf("gmtime_r done\n");
             // print in RFC 822 compilant date format
-            if( strftime(timestamp, sizeof(timestamp), "timestamp:%a, %d %b %Y %T\n", &tm) == 0 ) {
+            if( strftime(timestamp, sizeof(timestamp), "timestamp: %a, %d %b %Y %T\n", &tm) == 0 ) {
                 printf("Error converting string with strftime\n");
             } 
             else {
-                //printf("%s\n", timestamp);
-                
+                //printf("td->write_file_fd = %d\n", td->write_file_fd);
                 ssize_t bytes_written;
                 int buf_bytes = strlen(timestamp);
                 bytes_written = write(td->write_file_fd, timestamp, buf_bytes);
@@ -86,6 +78,7 @@ void timer_thread ( union sigval sigval )
             printf("Error %d (%s) unlocking thread data!\n",errno,strerror(errno));
         }
     }
+    //printf("ending timer_thread\n");
 }
 
 /**
@@ -120,7 +113,7 @@ bool setup_timer( int clock_id,
 }
 
 
-
+/*
 int start_timestamp_wr_thread(int fd)
 {
 
@@ -161,4 +154,5 @@ int start_timestamp_wr_thread(int fd)
     }
     return success ? 0 : -1;
 }
+*/
 
