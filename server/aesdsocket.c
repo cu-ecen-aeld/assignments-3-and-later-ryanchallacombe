@@ -35,6 +35,12 @@ cat /tmp/valgrind-out.txt > /home/ryan/projects/assignments-3-and-later-ryanchal
 
 ************* 	TESTING *******************/
 
+/************* 	ACCESS SYSLOG *******************
+
+sudo cat /var/log/syslog
+
+************* 	ACCESS SYSLOG *******************/
+
 /************* 	REFERENCE INFO *******************
 
 struct addrinfo {
@@ -148,13 +154,13 @@ int main(int argc, char *argv[]) {
 
 	// Create file
 	//syslog( LOG_ERR, "Creating file %s.\n", wr_file_path);
-	printf("Creating file %s.\n", wr_file_path);
+	printf("Creating file: %s.\n", wr_file_path);
 	errno = 0;
 	int fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
 	// For some reason, file access is not correct, so close and reopen as below...
 	close(fd);
 	fd = open( wr_file_path, O_RDWR | O_APPEND);
-	printf("Write file fd in main(): %d\n", fd);
+	//printf("Write file fd in main(): %d\n", fd);
 	
 	// Check for errors
 	if ( (errno != 0) || (fd == -1) ) {
@@ -172,7 +178,6 @@ int main(int argc, char *argv[]) {
 	const char *port = "9000";
 	struct addrinfo hints;
 	struct addrinfo *servinfo;				// will point to the linked list of results
-	printf("sizeof(struct addrinfo): %lu\n", sizeof(struct addrinfo));
 
 
 	// hints setup
@@ -199,7 +204,7 @@ int main(int argc, char *argv[]) {
         return -1;
 	}
 	//syslog(LOG_DEBUG, "***** Socket file set with descriptor: %d\n", sockfd);
-	printf("***** Socket file set with descriptor: %d\n", sockfd);
+	//printf("***** Socket file set with descriptor: %d\n", sockfd);
 
 	// set SO_REUSEADDR on a socket to true (1):
 	int optval = 1;
@@ -209,8 +214,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	getsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
-	if (optval != 0) {
-    	printf("SO_REUSEADDR enabled on sockfd\n");
+	if (optval == 0) {
+    	printf("Error enabling SO_REUSEADDR on sockfd\n");
 	}
 
 	// bind() call
@@ -261,7 +266,7 @@ int main(int argc, char *argv[]) {
 	struct sock_thread_data *local_sock_thread_data = NULL;			// setup thread data struct
 	pthread_mutex_t fd_mutex = PTHREAD_MUTEX_INITIALIZER;			// setup mutex that will be shared by the threads
 	pthread_t my_thread = 0;	
-	printf("sizeof(struct sock_thread_data): %lu\n", sizeof(struct sock_thread_data));
+	// printf("sizeof(struct sock_thread_data): %lu\n", sizeof(struct sock_thread_data));
 
 	/************* Start Timestamp thread **************/
 	// copy/pasting function start_timestamp_wr_thread() text here
@@ -292,6 +297,16 @@ int main(int argc, char *argv[]) {
     }
 
 	/********** Loop **********/
+
+	/************* MEM LEAK NOTE 3/22/2026 a6p1 **************/
+    /*
+		
+		Valgrind shows a 40 byte mem leak happenning. I believe I tracked it down to somewhere in the while() loop. 
+		40 bytes is the size of struct sock_thread_data. 
+		I spent several hours looking for it with no luck
+
+	*/
+	/************* MEM LEAK NOTE 3/22/2026 a6p1 **************/
 	while ( !caught_signal ) {
 
 		// listen() call. This will block until a connection is established
@@ -304,13 +319,16 @@ int main(int argc, char *argv[]) {
 			rtn_val = -1;
 			goto DONE;
 		}
-		else {printf("Server set on port %s. Listening for client\n", port);}
+		else {
+			syslog(LOG_DEBUG, "Server set on port %s. Listening for client\n", port);
+			//printf("Server set on port %s. Listening for client\n", port);
+		}
 
 		// accept() call
 		errno = 0;
 		if ( (spkr_fd = accept(sockfd, (struct sockaddr *)&spkr_addr, &addr_size)) == -1) {
-			//syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
-			printf("accept() call error: %s\n", strerror(errno));
+			syslog(LOG_ERR, "accept() call error: %s\n", strerror(errno));
+			//printf("accept() call error: %s\n", strerror(errno));
 			//cleanup_func(sockfd, servinfo);	
 			//return -1;
 			rtn_val = -1;
@@ -320,8 +338,8 @@ int main(int argc, char *argv[]) {
 		// Print address of connected speaker
 		getpeername(spkr_fd, (struct sockaddr *)&spkr_addr, &addr_size);
 		inet_ntop(AF_INET, (struct sockaddr_in *)&spkr_addr, ipstr, INET_ADDRSTRLEN);
-	    //syslog(LOG_DEBUG, "Accepted connection from %s\n", ipstr);
-	    printf("Accepted connection from %s\n", ipstr);
+	    syslog(LOG_DEBUG, "Accepted connection from %s\n", ipstr);
+	    //printf("Accepted connection from %s\n", ipstr);
 
 		// malloc struct socket_thread_data
 		local_sock_thread_data = malloc( sizeof( struct sock_thread_data ));
@@ -353,9 +371,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		num_threads_created++;
-		printf("Thread started. Thread ID: %u\n", (unsigned int) my_thread);
+		syslog(LOG_DEBUG, "Thread started. Thread ID: %u\n", (unsigned int) my_thread);
+		//printf("Thread started. Thread ID: %u\n", (unsigned int) my_thread);
 
-		// reset local values, remain unchanged in linked list??
+		// reset local values, remain unchanged in linked list(????)
 		//local_sock_thread_data = NULL;
 		my_thread = 0;
 
@@ -367,9 +386,10 @@ int main(int argc, char *argv[]) {
 			//  if complete but not successful.... do what??
 			if ( local_sock_thread_data->thread_success || local_sock_thread_data->thread_complete )	
 			{
-				printf( "Thread %u completed with thread_success = %d. Joining, removing, and freeing it...\n", 
+				syslog(LOG_DEBUG, "Thread %u completed with thread_success = %d. Joining, removing, and freeing it...\n", 
 					(unsigned int) local_sock_thread_data->tid, 
 					(unsigned int) local_sock_thread_data->thread_success );
+
 
 				ret = 0;
 				ret = pthread_join(local_sock_thread_data->tid, NULL);
@@ -400,11 +420,9 @@ int main(int argc, char *argv[]) {
 	free(local_sock_thread_data);
 	num_freed++;
 
-	cleanup_func(sockfd, servinfo);
-
 	// unwind the linked list if it is not empty
 	if ( !SLIST_EMPTY(&head) ) {
-		printf("Freeing socket thread linked list.\n");
+		syslog(LOG_DEBUG,"Freeing socket thread linked list.\n");
 		struct sock_thread_data *e = NULL;
 		e = malloc(sizeof(struct sock_thread_data));
 
@@ -427,6 +445,8 @@ int main(int argc, char *argv[]) {
 	    free(e);
 	    e = NULL;
 	}
+
+	cleanup_func(sockfd, servinfo);
 
 	/*
 	printf("num_threads_created: %d\n", num_threads_created);

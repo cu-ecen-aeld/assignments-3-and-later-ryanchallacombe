@@ -176,8 +176,8 @@ bool start_socket_thread(pthread_t *thread,
 void exit_message(void)
 {
     /* Let user know program is ending */
-    //syslog(LOG_DEBUG, "***** Exiting aesdsocket program\n");
-    printf("***** Exiting aesdsocket program *****\n");
+    syslog(LOG_DEBUG, "***** Exiting aesdsocket program\n");
+    //printf("***** Exiting aesdsocket program *****\n");
     return;
 }
 
@@ -191,7 +191,7 @@ void cleanup_func(int socket_fd, struct addrinfo *servinfo)
 
     if ( caught_signal == true ) {
         syslog(LOG_DEBUG, "Caught signal, exiting\n");
-        printf("Caught signal, exiting\n");
+        //printf("Caught signal, exiting\n");
     }
 
     exit_message();
