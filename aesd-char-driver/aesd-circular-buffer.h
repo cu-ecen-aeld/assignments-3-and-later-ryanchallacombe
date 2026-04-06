@@ -17,7 +17,8 @@
 #include <stdio.h>  // printf
 #endif
 
-#define AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED 10
+//#define AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED 10
+#define AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED 3
 
 struct aesd_buffer_entry
 {

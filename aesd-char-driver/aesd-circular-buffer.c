@@ -44,25 +44,14 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 */
 void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
 {
-    /**
-    * TODO: implement per description
-    */
+    // create a local pointer to struct aesd_buffer_entry
+    // point it to the address of the currently in_offs indexed array element in the circ buff
+    struct aesd_buffer_entry *ent = &( buffer->entry[ buffer->in_offs ]);
 
-    printf("******************\n");
-    printf("** Before updates:\n");
-    printf("**** in_offs: %d\n", buffer->in_offs);
-    printf("**** out_offs: %d\n", buffer->out_offs);
-    printf("**** full: %d\n", buffer->full);
-
-    // debug
-    struct aesd_buffer_entry tmp = *add_entry;
-    
-
-    // in_offs is currently in the position where the next entry should be
-    // enter the pointer into the circular buffer arrays
-    //buffer->entry[ buffer->in_offs ] = add_entry;
-    buffer->entry[ buffer->in_offs ] = tmp;
-
+    // now we can just set the values in add_entry to the local struct values
+    // which is pointed at the array address
+    ent->buffptr = add_entry->buffptr;
+    ent->size = add_entry->size;
     
     // if buffer is full:
     //  it cannot become unfull in this implementation
@@ -72,10 +61,10 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     // if buffer is not full:
     //  it will become full when in_offs == AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED
 
-    // if in_offs < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED, increment it
+    // if in_offs < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1, increment it
     // else, wrap it around
 
-    if ( buffer->in_offs == AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED ) {
+    if ( buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED-1) ) {
         // set buffer.full to true
         buffer->full = true;
 
@@ -96,6 +85,7 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     printf("**** out_offs: %d\n", buffer->out_offs);
     printf("**** full: %d\n", buffer->full);
 
+    return;
 }
 
 /**
