@@ -80,18 +80,17 @@ int main(void)
 	aesd_circular_buffer_add_entry(&circ_buff, entry2);
 	aesd_circular_buffer_add_entry(&circ_buff, entry3);
 	aesd_circular_buffer_add_entry(&circ_buff, entry4);
-	
 
-	/*
-	uint8_t index;
-	struct aesd_circular_buffer buffer;
-	struct aesd_buffer_entry *entry;
-	AESD_CIRCULAR_BUFFER_FOREACH(entry, buffer, index) {
-    	printf("entry->");
- 	}
- 	*/
+	/*******************************************/
+	/************** test position search func **************/
+	/*******************************************/
 
+	struct aesd_buffer_entry *ret_ent = malloc( sizeof( struct aesd_buffer_entry ) );
+	size_t ret_offset;
+	ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos(&circ_buff, 4, &ret_offset);
 
+	printf("ret_offset: %lu\n", ret_offset);
+	printf("ret_ent->buffptr: %s\n", ret_ent->buffptr);
 
 	return 0;
 }

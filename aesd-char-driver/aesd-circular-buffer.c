@@ -29,10 +29,23 @@
 struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct aesd_circular_buffer *buffer,
             size_t char_offset, size_t *entry_offset_byte_rtn )
 {
-    /**
-    * TODO: implement per description
-    */
-    return NULL;
+    size_t total_byte_count = 0;
+    unsigned int idx = 0, found_ent = 0;
+    struct aesd_buffer_entry *ent = NULL, *rtn_ent = NULL;
+    //struct aesd_buffer_entry *rtn_ent = NULL;
+
+    while ( !found_ent & (idx < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) ) {
+        ent = &( buffer->entry[idx] );
+
+        if ( (total_byte_count <= char_offset) & (char_offset <= (total_byte_count + ent->size) )  ) {
+            found_ent = 1;
+            *entry_offset_byte_rtn = char_offset - total_byte_count;
+            rtn_ent = ent;
+        }
+        idx++;
+    }
+
+    return rtn_ent;
 }
 
 /**
