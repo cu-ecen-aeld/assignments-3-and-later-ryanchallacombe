@@ -36,7 +36,7 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 
     while ( !found_ent & (idx < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) ) {
         
-        ent_idx = ( idx + buffer->in_offs ) % 10;        
+        ent_idx = ( idx + buffer->in_offs ) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;        
         ent = &( buffer->entry[ent_idx] );
 
         if ( (total_byte_count <= char_num) & (char_num <= (total_byte_count + ent->size) )  ) {
@@ -81,7 +81,7 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     //  it cannot become unfull in this implementation
     //      i.e. there is no pulling entries out of the buffer
     //  the out_offs will track with in_offs 
-    
+
     if ( buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED-1) ) {
         // buffer is full, wrap around
         buffer->full = true;
