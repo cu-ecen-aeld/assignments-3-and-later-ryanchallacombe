@@ -24,35 +24,6 @@ int main(void)
 	/*******************************************/
 	/************** setup entries **************/
 	/*******************************************/
-	/*
-	struct aesd_buffer_entry entry1;
-	entry1.buffptr = str1;
-	entry1.size = strlen( entry1.buffptr );
-
-	printf("entry1 addr: 0x%lx\n", (long unsigned int) &entry1 );
-	printf("entry1.buffptr: %s\n", entry1.buffptr );
-	printf("entry1.size: %d\n", (unsigned int) entry1.size );
-
-	struct aesd_buffer_entry entry2;
-	entry2.buffptr = str2;
-	entry2.size = strlen( entry2.buffptr );
-
-	printf("entry2 addr: 0x%lx\n", (long unsigned int) &entry2 );
-	printf("entry2.buffptr: %s\n", entry2.buffptr );
-	printf("entry2.size: %d\n", (unsigned int) entry2.size );
-
-	struct aesd_buffer_entry entry3;
-	entry3.buffptr = str3;
-	entry3.size = strlen( entry3.buffptr );
-
-	printf("entry3 addr: 0x%lx\n", (long unsigned int) &entry3 );
-	printf("entry3.buffptr: %s\n", entry3.buffptr );
-	printf("entry3.size: %d\n", (unsigned int) entry3.size );
-	*/
-
-	/*******************************************/
-	/************** setup entries **************/
-	/*******************************************/
 	struct aesd_buffer_entry *entry1 = malloc( sizeof( struct aesd_buffer_entry ) );
 	entry1->buffptr = str1;
 	entry1->size = strlen( entry1->buffptr );
@@ -75,22 +46,57 @@ int main(void)
 	aesd_circular_buffer_add_entry(&circ_buff, entry1);
 	aesd_circular_buffer_add_entry(&circ_buff, entry2);
 	aesd_circular_buffer_add_entry(&circ_buff, entry3);
+
+	/*******************************************/
+	/************** test position search func **************/
+	/*******************************************/
+
+	size_t char_pos = 20;
+	struct aesd_buffer_entry *ret_ent = malloc( sizeof( struct aesd_buffer_entry ) );
+	size_t ret_offset;
+	ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos(&circ_buff, char_pos, &ret_offset);
+
+	printf("testing for char_pos = %lu\n", char_pos);
+	if ( ret_ent != NULL ) {
+		printf("ret_offset: %lu\n", ret_offset);
+		printf("ret_ent->buffptr: %s\n", ret_ent->buffptr);
+	} else {
+		printf("nothing found at char_pos = %lu\n", char_pos);
+	}
+
+	/*******************************************/
+	/************** add entries   **************/
+	/*******************************************/
+	aesd_circular_buffer_add_entry(&circ_buff, entry1);
+	aesd_circular_buffer_add_entry(&circ_buff, entry2);
+	aesd_circular_buffer_add_entry(&circ_buff, entry3);
 	aesd_circular_buffer_add_entry(&circ_buff, entry4);
 	aesd_circular_buffer_add_entry(&circ_buff, entry1);
 	aesd_circular_buffer_add_entry(&circ_buff, entry2);
 	aesd_circular_buffer_add_entry(&circ_buff, entry3);
 	aesd_circular_buffer_add_entry(&circ_buff, entry4);
 
-	/*******************************************/
-	/************** test position search func **************/
-	/*******************************************/
+	char_pos = 0;
+	ret_ent = NULL;
+	ret_offset = 99;
+	ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos(&circ_buff, char_pos, &ret_offset);
 
-	struct aesd_buffer_entry *ret_ent = malloc( sizeof( struct aesd_buffer_entry ) );
-	size_t ret_offset;
-	ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos(&circ_buff, 4, &ret_offset);
+	printf("testing for char_pos = %lu\n", char_pos);
+	if ( ret_ent != NULL ) {
+		printf("ret_offset: %lu\n", ret_offset);
+		printf("ret_ent->buffptr: %s\n", ret_ent->buffptr);
+	} else {
+		printf("nothing found at char_pos = %lu\n", char_pos);
+	}
 
-	printf("ret_offset: %lu\n", ret_offset);
-	printf("ret_ent->buffptr: %s\n", ret_ent->buffptr);
+/*
+ 	uint8_t index;
+ 	struct aesd_buffer_entry *entryptr;
+	AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &circ_buff, index) {
+		printf("entryptr->buffptr: %s\n", entryptr->buffptr);
+	}
+	*/
+	
 
 	return 0;
 }

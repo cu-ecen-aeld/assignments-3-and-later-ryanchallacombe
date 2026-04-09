@@ -30,19 +30,23 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
             size_t char_offset, size_t *entry_offset_byte_rtn )
 {
     size_t total_byte_count = 0;
-    unsigned int idx = 0, found_ent = 0;
     struct aesd_buffer_entry *ent = NULL, *rtn_ent = NULL;
-    //struct aesd_buffer_entry *rtn_ent = NULL;
+    size_t char_num = char_offset + 1;
+    unsigned int idx = 0, found_ent = 0, ent_idx;
 
     while ( !found_ent & (idx < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) ) {
-        ent = &( buffer->entry[idx] );
+        
+        ent_idx = ( idx + buffer->in_offs ) % 10;        
+        ent = &( buffer->entry[ent_idx] );
 
-        if ( (total_byte_count <= char_offset) & (char_offset <= (total_byte_count + ent->size) )  ) {
+        if ( (total_byte_count <= char_num) & (char_num <= (total_byte_count + ent->size) )  ) {
             found_ent = 1;
             *entry_offset_byte_rtn = char_offset - total_byte_count;
             rtn_ent = ent;
         }
+        total_byte_count += ent->size;
         idx++;
+
     }
 
     return rtn_ent;
@@ -66,22 +70,21 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     ent->buffptr = add_entry->buffptr;
     ent->size = add_entry->size;
     
+    /*
+    // DEBUG
+    printf("********* BEGIN aesd_circular_buffer_add_entry *********\n");
+    printf("** Before updates **\n");
+    printf("**** ent->buffptr: %s\n", ent->buffptr);
+    */
+
     // if buffer is full:
     //  it cannot become unfull in this implementation
     //      i.e. there is no pulling entries out of the buffer
     //  the out_offs will track with in_offs 
-
-    // if buffer is not full:
-    //  it will become full when in_offs == AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED
-
-    // if in_offs < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1, increment it
-    // else, wrap it around
-
+    
     if ( buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED-1) ) {
-        // set buffer.full to true
+        // buffer is full, wrap around
         buffer->full = true;
-
-        // reset in_offs
         buffer->in_offs = 0;
     } else {
         // increment buffer
@@ -92,11 +95,19 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
         buffer->out_offs = buffer->in_offs;
     }
 
-    printf("******************\n");
-    printf("** After updates:\n");
+    /*
+    // DEBUG
+    printf("** After updates **\n");
     printf("**** in_offs: %d\n", buffer->in_offs);
     printf("**** out_offs: %d\n", buffer->out_offs);
     printf("**** full: %d\n", buffer->full);
+    uint8_t index;
+    struct aesd_buffer_entry *entryptr;
+    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, buffer, index) {
+        printf("***entryptr->buffptr: %s\n", entryptr->buffptr);
+    }
+    printf("********* END aesd_circular_buffer_add_entry *********\n");
+    */
 
     return;
 }
