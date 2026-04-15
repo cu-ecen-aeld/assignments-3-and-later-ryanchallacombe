@@ -4,8 +4,10 @@ Ryan Challacombe, 4/15/2026
 ## Background
 According to Wikipedia, a linux kernel oops is: 
 > a serious but non-fatal error in the Linux kernel. An oops may precede a kernel panic, but it may also allow continued operation with compromised reliability
+
 The kernel oops for Assignment 7 Part 2 was induced by writing to a 'faulty module' which is part of the LDD3 misc-modules package. The 'faulty' driver module was loaded into the QEMU system at bootup using an init script. The oops was induced by writing to the driver as follows: 'echo “hello_world” > /dev/faulty'
 The resulting output is as follows:
+
 '''
 Unable to handle kernel NULL pointer dereference at virtual address 0000000000000000
 Mem abort info:
