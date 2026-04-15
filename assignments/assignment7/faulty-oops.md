@@ -1,8 +1,12 @@
+# Faulty Module - Kernel Oops Analysis
+Ryan Challacombe, 4/15/2026
 
-markdown tutorial:
-https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
-
-# echo “hello_world” > /dev/faulty
+## Background
+According to Wikipedia, a linux kernel oops is: 
+> a serious but non-fatal error in the Linux kernel. An oops may precede a kernel panic, but it may also allow continued operation with compromised reliability
+The kernel oops for Assignment 7 Part 2 was induced by writing to a 'faulty module' which is part of the LDD3 misc-modules package. The 'faulty' driver module was loaded into the QEMU system at bootup using an init script. The oops was induced by writing to the driver as follows: 'echo “hello_world” > /dev/faulty'
+The resulting output is as follows:
+'''
 Unable to handle kernel NULL pointer dereference at virtual address 0000000000000000
 Mem abort info:
   ESR = 0x0000000096000045
@@ -48,4 +52,27 @@ Code: d2800001 d2800000 d503233f d50323bf (b900003f)
 
 Welcome to Buildroot
 buildroot login: 
+'''
 
+## Analysis
+The first line of the oops output gives a big clue as to what happened:
+'Unable to handle kernel NULL pointer dereference at virtual address 0000000000000000'
+A little further down in the output we see that the 'faulty' module is named along with other useful information:
+'pc : faulty_write+0x10/0x20 [faulty]'
+Diving into the faulty module we see the following null pointer derefence:
+'''
+ssize_t faulty_write (struct file *filp, const char __user *buf, size_t count,
+    loff_t *pos)
+{
+  /* make a simple fault by dereferencing a NULL pointer */
+  *(int *)0 = 0;
+  return 0;
+}
+'''
+
+dk
+
+
+## References
+1. [markdown tutorial] (https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+2. https://en.wikipedia.org/wiki/Linux_kernel_oops
