@@ -59,6 +59,7 @@ buildroot login:
 ## Analysis
 The first line of the oops output gives a big clue as to what happened:
 `Unable to handle kernel NULL pointer dereference at virtual address 0000000000000000`
+
 Diving into the faulty module we see the following null pointer derefence:
 ```
 ssize_t faulty_write (struct file *filp, const char __user *buf, size_t count,
@@ -69,7 +70,7 @@ ssize_t faulty_write (struct file *filp, const char __user *buf, size_t count,
   return 0;
 }
 ```
-This is clearly the cause of the oops in this particular case, but in other situations it may be very tricky to find the cause. We need to be able to interpret the shell output to find the bug.
+The null pointer derefence is clearly the cause of the oops in this particular case, but in other situations it may be very tricky to find the cause. We need to be able to interpret the shell output to find the bug.
 
 Continuing to review the shell output, a little further down we see that the 'faulty' module is named along with other useful information:
 `pc : faulty_write+0x10/0x20 [faulty]`
@@ -78,10 +79,9 @@ Ths line shows is in the form of `<symbol> + the offset/length`. The `symbol` is
 The key thing to note here is that, if we were able to disassemble the compiled code and look at the faulty_write function, we would see that the instruction at the offset of 0x10 is the cause of the oops. This points us directly to the bug. 
 
 
-
 ## References
-1. [markdown tutorial] (https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+1. [markdown tutorial](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
 2. https://en.wikipedia.org/wiki/Linux_kernel_oops
 3. https://www.opensourceforu.com/2011/01/understanding-a-kernel-oops/
-4. [kernel/panic.c] (https://github.com/torvalds/linux/blob/master/kernel/panic.c)
+4. [kernel/panic.c](https://github.com/torvalds/linux/blob/master/kernel/panic.c)
 
