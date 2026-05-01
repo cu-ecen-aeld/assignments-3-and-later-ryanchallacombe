@@ -58,12 +58,24 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 * new start location.
 * Any necessary locking must be handled by the caller
 * Any memory referenced in @param add_entry must be allocated by and/or must have a lifetime managed by the caller.
+* Modified for Assignment 8
+* Returns a pointer to the overwritten command in the case where the circ buffer is full and a command is overwritten
+*   Returns NULL otherwisre
 */
-void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
+const char *aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
 {
     // create a local pointer to struct aesd_buffer_entry
     // point it to the address of the currently in_offs indexed array element in the circ buff
     struct aesd_buffer_entry *ent = &( buffer->entry[ buffer->in_offs ]);
+
+    // setup a return value pointer
+    const char *rtn_ptr = NULL;
+
+    // if buffer is full, set pointer to address of overwritten command
+    if ( buffer->full ) {
+        rtn_ptr = ent->buffptr;
+    }
+
 
     // now we can just set the values in add_entry to the local struct values
     // which is pointed at the array address
@@ -80,7 +92,8 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     // if buffer is full:
     //  it cannot become unfull in this implementation
     //      i.e. there is no pulling entries out of the buffer
-    //  the out_offs will track with in_offs 
+    //  the out_offs will track with in_offs
+    //  need to return ptr to entry that is being overwritten 
 
     if ( buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED-1) ) {
         // buffer is full, wrap around
@@ -109,7 +122,7 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     printf("********* END aesd_circular_buffer_add_entry *********\n");
     */
 
-    return;
+    return rtn_ptr;
 }
 
 /**
