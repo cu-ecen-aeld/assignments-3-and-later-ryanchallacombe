@@ -23,16 +23,32 @@
 #  define PDEBUG(fmt, args...) /* not debugging: nothing */
 #endif
 
+#include "aesd-circular-buffer.h"
+
 struct aesd_dev
 {
      /**
      * TODO: Add structure(s) and locks needed to complete assignment requirements
      */
-     struct cdev cdev;                  /* Char device structure      */
-     struct aesd_circular_buffer;       
-     //struct aesd_buffer_entry;          // not sure if this is recommended?
+     struct cdev cdev;                            // Char device structure
+     struct aesd_circular_buffer k_circ_buff;       
+     struct aesd_buffer_entry *k_ent_buff;
+     //size_t k_ent_buff_allocated_count;           // tracks the amount of mem kmalloc'd to k_ent_buff      
      struct mutex lock;
+
 };
 
+/*
+ * Prototypes for shared functions
+ */
+int aesd_open(struct inode *inode, struct file *filp);
+int aesd_release(struct inode *inode, struct file *filp);
+ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
+                loff_t *f_pos);
+ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
+                loff_t *f_pos);
+//static int aesd_setup_cdev(struct aesd_dev *dev);
+int aesd_init_module(void);
+void aesd_cleanup_module(void);
 
 #endif /* AESD_CHAR_DRIVER_AESDCHAR_H_ */

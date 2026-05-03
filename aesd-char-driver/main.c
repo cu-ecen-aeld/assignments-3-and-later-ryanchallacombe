@@ -17,6 +17,9 @@
 #include <linux/types.h>
 #include <linux/cdev.h>
 #include <linux/fs.h> // file_operations
+#include <linux/slab.h>     /* kmalloc() */
+#include <linux/uaccess.h>  /* copy_*_user */
+
 #include "aesdchar.h"
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
@@ -34,7 +37,7 @@ int aesd_open(struct inode *inode, struct file *filp)
      * TODO: handle open
      */
 
-    struct aesd_dev dev;        /* device information */
+    struct aesd_dev *dev;        /* device information */
     dev = container_of(inode->i_cdev, struct aesd_dev, cdev);
     filp->private_data = dev;
 
@@ -93,21 +96,44 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 
     PDEBUG("read %zu bytes with offset %lld",count,*f_pos);
 
-    out:
+    //out:
         mutex_unlock(&dev->lock);
         return retval;
 }
+
+
+/************************************************************
+* aesd_write
+*   This is a write to the driver from the userspace
+*   It is a read from the driver's perspective
+*/
 
 ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
                 loff_t *f_pos)
 {
     ssize_t retval = -ENOMEM;
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
-    /**
+
+    /************************************************************
      * TODO: handle write
      */
+
+    // get some memory allocated to an aesd_entry
+    // lock it
+    // copy from the user buffer to it
+    // when newline char is copied, write everything from this memory into the circular buffer as the next entry
+
+
+
+
+    /*
+     * TODO: handle write
+     ************************************************************/
+
     return retval;
 }
+
+
 struct file_operations aesd_fops = {
     .owner =    THIS_MODULE,
     .read =     aesd_read,
@@ -148,12 +174,19 @@ int aesd_init_module(void)
      */
     
     // TODO? need to alloc for buffer dynamically?
-    aesd_circular_buffer_init( &aesd_device.aesd_circular_buffer );
+    aesd_circular_buffer_init( &aesd_device.k_circ_buff );
 
     // initialiaze mutex
     mutex_init( &aesd_device.lock );
 
-    // TODO? initialize buffer entry??
+    // alloc and initialize buffer entry
+    aesd_device.k_ent_buff = kmalloc(sizeof(struct aesd_buffer_entry), GFP_KERNEL);
+    if ( !aesd_device.k_ent_buff ) {
+        // allocation failed
+        PDEBUG("k_ent_buff alloc failed");
+        result = -ENOMEM;
+        goto init_fail;
+    }
 
 
     /**
@@ -167,6 +200,9 @@ int aesd_init_module(void)
     }
     return result;
 
+    init_fail:
+        aesd_cleanup_module();
+        return result;
 }
 
 void aesd_cleanup_module(void)
