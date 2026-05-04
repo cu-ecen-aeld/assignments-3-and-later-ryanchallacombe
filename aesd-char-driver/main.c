@@ -112,16 +112,70 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
                 loff_t *f_pos)
 {
     ssize_t retval = -ENOMEM;
+    PDEBUG("starting aesd_write() function");
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
 
     /************************************************************
      * TODO: handle write
      */
 
-    // get some memory allocated to an aesd_entry
+    // allocate some memory for count bytes
+    // point the aesd_buffer_entry to it
     // lock it
     // copy from the user buffer to it
     // when newline char is copied, write everything from this memory into the circular buffer as the next entry
+
+
+    // allocate memory for this write
+    // if we are starting with an empty buffer, we can just allocate @param count bytes
+    // if our buffer has data from a previous write, we need to allocate more
+    struct aesd_buffer_entry l_ent;
+    // TODO: memset....
+
+    // this allocation accounts for existing write data to the buff pointed to by g_ent
+    l_ent.buffptr = kmalloc(count + aesd_device.g_ent.size, GFP_KERNEL);
+    l_ent.size = 0;
+
+    // if existing data pointed to by g_ent.buffptr, we need to copy it to new buffer, then free it
+    if ( aesd_device.g_ent.buffptr != NULL ) {
+        // memcopy()...
+        // l_ent.size = g_ent.size 
+        // free( aesd_device.g_ent.buffptr );
+        // aesd_device.g_ent.buffptr = NULL;
+        // aesd_device.g_ent.size = 0;
+    }
+
+    // copy data from user
+    // unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
+    size_t copied_count = count;
+    copied_count = copy_from_user( (void *) l_ent.buffptr, buf, count);
+    l_ent.size += (count - copied_count);
+
+    // loop through buffer to see if '\n' character is found
+    // TODO: check this for buffer overflow!!!
+    char c;
+    unsigned int newline_found = 0;
+    unsigned int i;
+    for(i=0; i <= l_ent.size; i++ ) {
+        c = *(l_ent.buffptr + i);   
+        if ( c == '\n' ) {
+            newline_found = 1;
+            break;
+        }
+    }
+
+    // if newline found, write to circular buffer
+
+
+    // cleanup / free as needed
+
+
+
+
+
+
+    // aesd_device.g_ent.buffptr = kmalloc(  );
+
 
 
 
@@ -173,20 +227,29 @@ int aesd_init_module(void)
      * TODO: initialize the AESD specific portion of the device
      */
     
-    // TODO? need to alloc for buffer dynamically?
+    // initialize buffer
     aesd_circular_buffer_init( &aesd_device.k_circ_buff );
 
     // initialiaze mutex
     mutex_init( &aesd_device.lock );
 
+    /*
     // alloc and initialize buffer entry
     aesd_device.k_ent_buff = kmalloc(sizeof(struct aesd_buffer_entry), GFP_KERNEL);
-    if ( !aesd_device.k_ent_buff ) {
+    if ( aesd_device.k_ent_buff == NULL ) {
         // allocation failed
         PDEBUG("k_ent_buff alloc failed");
         result = -ENOMEM;
         goto init_fail;
     }
+
+    // initialize aesd entry buffer
+    aesd_device.k_ent_buff->buffptr = NULL;
+    aesd_device.k_ent_buff->size = 0;
+    */
+
+    aesd_device.g_ent.buffptr = NULL;
+    aesd_device.g_ent.size = 0;
 
 
     /**
@@ -200,7 +263,7 @@ int aesd_init_module(void)
     }
     return result;
 
-    init_fail:
+    //init_fail:
         aesd_cleanup_module();
         return result;
 }
@@ -215,7 +278,7 @@ void aesd_cleanup_module(void)
      * TODO: cleanup AESD specific poritions here as necessary
      */
 
-    // nothing??
+    //kfree(aesd_device.k_ent_buff);
 
      /*
      * TODO: cleanup AESD specific poritions here as necessary
