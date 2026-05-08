@@ -121,7 +121,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     ssize_t retval = -ENOMEM;   /* value used in "goto out" statements */
     struct aesd_dev *dev = filp->private_data;
-    struct aesd_buffer_entry *g_ent = dev->g_ent;
+    struct aesd_buffer_entry g_ent = dev->g_ent;
 
     // Lock data
     /*
@@ -144,7 +144,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     // this allocation accounts for existing write data to the buff pointed to by g_ent
     // if no existing data in g_ent, the size must be zero and the pointer must be NULL
-    l_ent->buffptr = kmalloc(count + g_ent->size, GFP_KERNEL);
+    l_ent->buffptr = kmalloc(count + g_ent.size, GFP_KERNEL);
     if ( l_ent->buffptr == NULL ) {
         PDEBUG("error allocating for l_ent->buffptr\n");
         retval = -ENOMEM;
@@ -153,14 +153,14 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     }
     l_ent->size = 0;
 
-    // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
-    if ( g_ent->buffptr != NULL ) {
+    // if existing data pointed to by g_ent.buffptr, we need to copy it to new and bigger buffer, then free it
+    if ( g_ent.buffptr != NULL ) {
         PDEBUG("copying previous write into newly alloc'd memory\n");
-        memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
-        l_ent->size = g_ent->size;        // this is how many bytes we copied into l_ent 
-        kfree( g_ent->buffptr );
-        g_ent->buffptr = NULL;
-        g_ent->size = 0;
+        memcpy( (void *) l_ent->buffptr, g_ent.buffptr, g_ent.size);
+        l_ent->size = g_ent.size;        // this is how many bytes we copied into l_ent 
+        kfree( g_ent.buffptr );
+        g_ent.buffptr = NULL;
+        g_ent.size = 0;
     }
 
     // copy data from user
@@ -203,8 +203,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         // No newline was found so we need to keep this data
         // we will append to it on next write
         // save it to g_ent for use with next write
-        g_ent->buffptr = l_ent->buffptr;
-        g_ent->size = l_ent->size;
+        g_ent.buffptr = l_ent->buffptr;
+        g_ent.size = l_ent->size;
 
         // free and reset l_ent
         kfree(l_ent->buffptr);
@@ -216,7 +216,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // cleanup / free as needed
 
 
-    // aesd_device.g_ent->buffptr = kmalloc(  );
+    // aesd_device.g_ent.buffptr = kmalloc(  );
 
 
     /*
@@ -289,8 +289,8 @@ int aesd_init_module(void)
     aesd_device.k_ent_buff->size = 0;
     */
 
-    aesd_device.g_ent->buffptr = NULL;
-    aesd_device.g_ent->size = 0;
+    aesd_device.g_ent.buffptr = NULL;
+    aesd_device.g_ent.size = 0;
 
 
     /**

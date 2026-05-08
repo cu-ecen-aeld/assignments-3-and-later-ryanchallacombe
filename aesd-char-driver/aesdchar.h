@@ -33,7 +33,7 @@ struct aesd_dev
      struct cdev cdev;                            // Char device structure
      struct aesd_circular_buffer k_circ_buff;       
      //struct aesd_buffer_entry *k_ent_buff;
-     struct aesd_buffer_entry g_ent;              // persistent accross function calls
+     struct aesd_buffer_entry *g_ent;              // persistent accross function calls
      //size_t k_ent_buff_allocated_count;           // tracks the amount of mem kmalloc'd to k_ent_buff      
      struct mutex lock;
 

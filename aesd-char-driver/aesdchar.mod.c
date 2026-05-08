@@ -38,19 +38,24 @@ __used __section("__versions") = {
 	{ 0xe3ec2f2b, "alloc_chrdev_region" },
 	{ 0x88db9f48, "__check_object_size" },
 	{ 0x13c49cc2, "_copy_from_user" },
+	{ 0x69acdf38, "memcpy" },
+	{ 0x37a0cba, "kfree" },
 	{ 0xbdfb6dbb, "__fentry__" },
 	{ 0x122c3a7e, "_printk" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
 	{ 0x87a21cb3, "__ubsan_handle_out_of_bounds" },
 	{ 0x6a7b86fa, "cdev_add" },
+	{ 0x4c03a563, "random_kmalloc_seed" },
 	{ 0xcefb0c9f, "__mutex_init" },
 	{ 0x89940875, "mutex_lock_interruptible" },
 	{ 0x5b8239ca, "__x86_return_thunk" },
 	{ 0x6091b333, "unregister_chrdev_region" },
 	{ 0x3213f038, "mutex_unlock" },
+	{ 0xbf55f104, "kmalloc_trace" },
 	{ 0x54b1fac6, "__ubsan_handle_load_invalid_value" },
 	{ 0x81daace6, "cdev_init" },
 	{ 0xeb233a45, "__kmalloc" },
+	{ 0x1004e946, "kmalloc_caches" },
 	{ 0x67d01ca4, "cdev_del" },
 	{ 0x73776b79, "module_layout" },
 };
@@ -58,4 +63,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "2C6365EE269F57E129705D3");
+MODULE_INFO(srcversion, "9C40DF547697F75AB55D95F");
