@@ -64,11 +64,17 @@ int aesd_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
+/************************************************************
+* aesd_read
+*   This is a read from the driver to the userspace
+*   It is a write from the driver's perspective
+*/
+
 ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
                 loff_t *f_pos)
 {
-    PDEBUG("read");
-    ssize_t retval = 0;
+    PDEBUG("starting aesd_read() function");
+    ssize_t retval = 0;     // number of bytes read
     
     
     /***********************************************************
@@ -76,28 +82,35 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
      */
     struct aesd_dev *dev = filp->private_data;
 
+    /*
     if (mutex_lock_interruptible(&dev->lock))
         return -ERESTARTSYS;
+    */
 
     // read from aesd circular buffer
-    // return will be null if none
+    size_t ret_offset;                      // holds the offset of the first char in the returned buffer entry
+    struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
+    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->k_circ_buff, *f_pos, &ret_offset ); 
 
-    /**     User space usage
-    size_t char_pos = 20;
-    struct aesd_buffer_entry *ret_ent = malloc( sizeof( struct aesd_buffer_entry ) );
-    size_t ret_offset;
-    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos(&circ_buff, char_pos, &ret_offset);
-    **/
-    
+    // 
+
+    unsigned long uncopied_count;
+    // unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
+    uncopied_count = copy_to_user( buf, &(ret_ent->buffptr), ret_ent->size );
+    retval = count - uncopied_count;
+
+    // update pointer to point to next offset
+    f_pos = f_pos - ret_offset + ret_ent->size;
+
+
+    PDEBUG("read %zu bytes with offset %lld", retval, *f_pos);
 
      /*
      * TODO: handle read
      ************************************************************/
 
-    PDEBUG("read %zu bytes with offset %lld",count,*f_pos);
-
     //out:
-        mutex_unlock(&dev->lock);
+        //mutex_unlock(&dev->lock);
         return retval;
 }
 
