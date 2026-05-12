@@ -24,7 +24,7 @@
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
 
-MODULE_AUTHOR("Your Name Here"); /** TODO: fill in your name **/
+MODULE_AUTHOR("Ryan Challacombe");
 MODULE_LICENSE("Dual BSD/GPL");
 
 struct aesd_dev aesd_device;
@@ -60,8 +60,10 @@ int aesd_release(struct inode *inode, struct file *filp)
     uint8_t index;
     struct aesd_buffer_entry *entryptr;
     AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
-        PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
-        kfree((void *) entryptr->buffptr);
+        if (entryptr->buffptr != NULL) {
+            PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
+            kfree((void *) entryptr->buffptr);            
+        }
     }
 
      /*
@@ -269,6 +271,7 @@ static int aesd_setup_cdev(struct aesd_dev *dev)
 
 int aesd_init_module(void)
 {
+    PDEBUG("Starting aesd_init_module()\n");
     dev_t dev = 0;
     int result;
     result = alloc_chrdev_region(&dev, aesd_minor, 1, "aesdchar");
@@ -289,21 +292,7 @@ int aesd_init_module(void)
     // initialiaze mutex
     mutex_init( &aesd_device.lock );
 
-    /*
-    // alloc and initialize buffer entry
-    aesd_device.k_ent_buff = kmalloc(sizeof(struct aesd_buffer_entry), GFP_KERNEL);
-    if ( aesd_device.k_ent_buff == NULL ) {
-        // allocation failed
-        PDEBUG("k_ent_buff alloc failed");
-        result = -ENOMEM;
-        goto init_fail;
-    }
-
-    // initialize aesd entry buffer
-    aesd_device.k_ent_buff->buffptr = NULL;
-    aesd_device.k_ent_buff->size = 0;
-    */
-
+    // initialize statically allocatted aesd_buffer_entry g_ent 
     aesd_device.g_ent->buffptr = NULL;
     aesd_device.g_ent->size = 0;
 
@@ -317,15 +306,20 @@ int aesd_init_module(void)
     if( result ) {
         unregister_chrdev_region(dev, 1);
     }
+
+    PDEBUG("Exiting aesd_init_module() with return = %i\n", result);
     return result;
 
-    //init_fail:
+    /*
+    init_fail:
         aesd_cleanup_module();
         return result;
+    */
 }
 
 void aesd_cleanup_module(void)
 {
+    PDEBUG("Starting aesd_cleanup_module()\n");
     dev_t devno = MKDEV(aesd_major, aesd_minor);
 
     cdev_del(&aesd_device.cdev);
@@ -334,7 +328,7 @@ void aesd_cleanup_module(void)
      * TODO: cleanup AESD specific poritions here as necessary
      */
 
-    //kfree(aesd_device.k_ent_buff);
+    
 
      /*
      * TODO: cleanup AESD specific poritions here as necessary
