@@ -31,7 +31,7 @@ struct aesd_dev aesd_device;
 
 int aesd_open(struct inode *inode, struct file *filp)
 {
-    PDEBUG("open");
+    PDEBUG("starting aesd_open() function");
 
     /***********************************************************
      * TODO: handle open
@@ -50,12 +50,19 @@ int aesd_open(struct inode *inode, struct file *filp)
 
 int aesd_release(struct inode *inode, struct file *filp)
 {
-    PDEBUG("release");
+    PDEBUG("starting aesd_release() function");
 
     /************************************************************
      * TODO: handle release
      */
+    struct aesd_dev *dev = filp->private_data;
 
+    uint8_t index;
+    struct aesd_buffer_entry *entryptr;
+    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
+        PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
+        kfree((void *) entryptr->buffptr);
+    }
 
      /*
      * TODO: handle release
@@ -90,7 +97,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     // read from aesd circular buffer
     size_t ret_offset;                      // holds the offset of the first char in the returned buffer entry
     struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
-    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->k_circ_buff, *f_pos, &ret_offset ); 
+    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *f_pos, &ret_offset ); 
 
     // 
 
@@ -205,7 +212,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         // return value will point to memory that is overwritten
         //      Or be NULL if nothing overwritten
         const char *ret_ptr = NULL;
-        ret_ptr = aesd_circular_buffer_add_entry( &dev->k_circ_buff, l_ent );
+        ret_ptr = aesd_circular_buffer_add_entry( &dev->circ_buff, l_ent );
         if ( ret_ptr != NULL ) {
             PDEBUG("freeing overwritten buffer entry\n");
             kfree(ret_ptr);
@@ -218,19 +225,14 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         // save it to g_ent for use with next write
         g_ent->buffptr = l_ent->buffptr;
         g_ent->size = l_ent->size;
-
-        // free and reset l_ent
-        kfree(l_ent->buffptr);
-        kfree(l_ent);
-        l_ent = NULL;
     }
 
-
-    // cleanup / free as needed
-
-
-    // aesd_device.g_ent->buffptr = kmalloc(  );
-
+    // Because the aesd_circular_buffer_add_entry() function simply copies
+    // the pointer and size into a statically allocated array of entries,
+    // we can free and reset l_ent here
+    kfree(l_ent->buffptr);
+    kfree(l_ent);
+    l_ent = NULL;
 
     /*
      * TODO: handle write
@@ -282,7 +284,7 @@ int aesd_init_module(void)
      */
     
     // initialize buffer
-    aesd_circular_buffer_init( &aesd_device.k_circ_buff );
+    aesd_circular_buffer_init( &aesd_device.circ_buff );
 
     // initialiaze mutex
     mutex_init( &aesd_device.lock );

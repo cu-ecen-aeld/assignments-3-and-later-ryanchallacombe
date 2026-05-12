@@ -31,7 +31,7 @@ struct aesd_dev
      * TODO: Add structure(s) and locks needed to complete assignment requirements
      */
      struct cdev cdev;                            // Char device structure
-     struct aesd_circular_buffer k_circ_buff;       
+     struct aesd_circular_buffer circ_buff;       
      //struct aesd_buffer_entry *k_ent_buff;
      struct aesd_buffer_entry *g_ent;              // persistent accross function calls
      //size_t k_ent_buff_allocated_count;           // tracks the amount of mem kmalloc'd to k_ent_buff      
