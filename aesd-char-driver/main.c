@@ -198,6 +198,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     uncopied_count = copy_from_user( (void *) l_ent->buffptr, buf, count);
     PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
+    retval = count - uncopied_count;
+
+    // debug
+    PDEBUG("l_ent->buffptr: %p\n", (void *) l_ent->buffptr);
+    PDEBUG("l_ent->size: %zu\n", l_ent->size);
 
     // TODO handle partial copies
     // see how scull does it
@@ -215,7 +220,6 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         }
     }
 
-    // here
     // if newline found, write to circular buffer
     if ( newline_found ) {
 
@@ -240,13 +244,24 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     }
 
     /*
+    // DEBUG
+    // read from aesd circular buffer
+    size_t ret_offset = 0;                  // holds the offset of the first char in the returned buffer entry
+    struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
+    loff_t *pos;
+    *pos = 0;
+    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *pos, &ret_offset ); 
+    PDEBUG("ret_ent->buffptr: %p\n", (void *) ret_ent->buffptr;
+    PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
+    */
+
     // Because the aesd_circular_buffer_add_entry() function simply copies
     // the pointer and size into a statically allocated array of entries,
     // we can free and reset l_ent here
-    kfree(l_ent->buffptr);
-    kfree(l_ent);
-    l_ent = NULL;
-    */
+    // PDEBUG("freeing l_ent->buffptr and l_ent\n");
+    //kfree(l_ent->buffptr);
+    //kfree(l_ent);
+    //l_ent = NULL;
 
     /*
      * TODO: handle write
