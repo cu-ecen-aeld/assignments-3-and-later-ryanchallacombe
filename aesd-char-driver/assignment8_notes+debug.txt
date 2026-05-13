@@ -1,0 +1,86 @@
+root@Ubuntu22:/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver# strace insmod ./aesdchar.ko
+execve("/usr/sbin/insmod", ["insmod", "./aesdchar.ko"], 0x7ffcd4c5fcc8 /* 17 vars */) = 0
+brk(NULL)                               = 0x5eff0c5b6000
+arch_prctl(0x3001 /* ARCH_??? */, 0x7fffb9703c90) = -1 EINVAL (Invalid argument)
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7ae5be40b000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=63836, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 63836, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7ae5be3fb000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libzstd.so.1", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=841808, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 843832, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7ae5be32c000
+mmap(0x7ae5be336000, 729088, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xa000) = 0x7ae5be336000
+mmap(0x7ae5be3e8000, 69632, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xbc000) = 0x7ae5be3e8000
+mmap(0x7ae5be3f9000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xcc000) = 0x7ae5be3f9000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/liblzma.so.5", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=170456, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 172296, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7ae5be301000
+mmap(0x7ae5be304000, 110592, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7ae5be304000
+mmap(0x7ae5be31f000, 45056, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1e000) = 0x7ae5be31f000
+mmap(0x7ae5be32a000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x28000) = 0x7ae5be32a000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libcrypto.so.3", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=4455728, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 4469952, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7ae5bde00000
+mmap(0x7ae5bdeb2000, 2486272, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb2000) = 0x7ae5bdeb2000
+mmap(0x7ae5be111000, 860160, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x311000) = 0x7ae5be111000
+mmap(0x7ae5be1e3000, 385024, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3e2000) = 0x7ae5be1e3000
+mmap(0x7ae5be241000, 9408, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7ae5be241000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0P\237\2\0\0\0\0\0"..., 832) = 832
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+pread64(3, "\4\0\0\0 \0\0\0\5\0\0\0GNU\0\2\0\0\300\4\0\0\0\3\0\0\0\0\0\0\0"..., 48, 848) = 48
+pread64(3, "\4\0\0\0\24\0\0\0\3\0\0\0GNU\0\t\\{\241H\256\312\201f\200\221\367\30\4px"..., 68, 896) = 68
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=2220400, ...}, AT_EMPTY_PATH) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 2264656, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7ae5bda00000
+mprotect(0x7ae5bda28000, 2023424, PROT_NONE) = 0
+mmap(0x7ae5bda28000, 1658880, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x28000) = 0x7ae5bda28000
+mmap(0x7ae5bdbbd000, 360448, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1bd000) = 0x7ae5bdbbd000
+mmap(0x7ae5bdc16000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x215000) = 0x7ae5bdc16000
+mmap(0x7ae5bdc1c000, 52816, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7ae5bdc1c000
+close(3)                                = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7ae5be2ff000
+arch_prctl(ARCH_SET_FS, 0x7ae5be2ffc40) = 0
+set_tid_address(0x7ae5be2fff10)         = 3865
+set_robust_list(0x7ae5be2fff20, 24)     = 0
+rseq(0x7ae5be3005e0, 0x20, 0, 0x53053053) = 0
+mprotect(0x7ae5bdc16000, 16384, PROT_READ) = 0
+mprotect(0x7ae5be1e3000, 372736, PROT_READ) = 0
+mprotect(0x7ae5be32a000, 4096, PROT_READ) = 0
+mprotect(0x7ae5be3f9000, 4096, PROT_READ) = 0
+mprotect(0x5efed5914000, 8192, PROT_READ) = 0
+mprotect(0x7ae5be445000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x7ae5be3fb000, 63836)           = 0
+getrandom("\x39\x32\x7f\xc8\x3b\xc0\x1b\x21", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x5eff0c5b6000
+brk(0x5eff0c5d7000)                     = 0x5eff0c5d7000
+uname({sysname="Linux", nodename="Ubuntu22", ...}) = 0
+openat(AT_FDCWD, "/lib/modules/6.8.0-111-generic/modules.softdep", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=2836, ...}, AT_EMPTY_PATH) = 0
+read(3, "# Soft dependencies extracted fr"..., 4096) = 2836
+read(3, "", 4096)                       = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/proc/cmdline", O_RDONLY|O_CLOEXEC) = 3
+read(3, "BOOT_IMAGE=/boot/vmlinuz-6.8.0-1"..., 4095) = 106
+read(3, "", 3989)                       = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, ".", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/./aesdchar.ko", {st_mode=S_IFREG|0664, st_size=332256, ...}, 0) = 0
+openat(AT_FDCWD, "/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/./aesdchar.ko", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1", 6)               = 6
+lseek(3, 0, SEEK_SET)                   = 0
+newfstatat(3, "", {st_mode=S_IFREG|0664, st_size=332256, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 332256, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7ae5be2ad000
+finit_module(3, "", 0
+

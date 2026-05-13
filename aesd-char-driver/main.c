@@ -36,11 +36,11 @@ int aesd_open(struct inode *inode, struct file *filp)
     /***********************************************************
      * TODO: handle open
      */
-
-    struct aesd_dev *dev;        /* device information */
+/*
+    struct aesd_dev *dev;        // device information 
     dev = container_of(inode->i_cdev, struct aesd_dev, cdev);
     filp->private_data = dev;
-
+*/
     /*
      * TODO: handle open
      ***********************************************************/
@@ -285,16 +285,23 @@ int aesd_init_module(void)
     /**********************************************************
      * TODO: initialize the AESD specific portion of the device
      */
-    
+    PDEBUG("&aesd_device: %p\n", (void *) &aesd_device);
+    PDEBUG("&aesd_device.circ_buff: %p\n", (void *) &aesd_device.circ_buff );
+    PDEBUG("&aesd_device.lock: %p\n", (void *) &aesd_device.lock );
+    PDEBUG("&aesd_device.g_ent: %p\n", (void *) &aesd_device.g_ent );
+
     // initialize buffer
     aesd_circular_buffer_init( &aesd_device.circ_buff );
-
+    
     // initialiaze mutex
     mutex_init( &aesd_device.lock );
 
     // initialize statically allocatted aesd_buffer_entry g_ent 
-    aesd_device.g_ent->buffptr = NULL;
-    aesd_device.g_ent->size = 0;
+    //aesd_device.g_ent->buffptr = NULL;
+    // aesd_device.g_ent->size = 0;
+
+    // dynamically allocate aesd_buffer_entry g_ent 
+    // aesd_device.g_ent->buffptr = kmalloc( sizeof(char *), GFP_KERNEL );
 
 
     /**
