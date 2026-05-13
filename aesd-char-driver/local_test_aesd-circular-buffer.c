@@ -33,14 +33,14 @@ int main(void)
 	const char *str4 = "buffer_number_3";
 	*/
 
-	char *str1 = malloc(5);
-	strcpy(str1, "buf0");
-	char *str2 = malloc(8);
-	strcpy(str2, "buffer1");
-	char *str3 = malloc(9);
-	strcpy(str3, "buffer_2");
-	char *str4 = malloc(16);
-	strcpy(str4, "buffer_number_3");
+	char *str1 = malloc(6);
+	strcpy(str1, "buf0\n");
+	char *str2 = malloc(9);
+	strcpy(str2, "buffer1\n");
+	char *str3 = malloc(10);
+	strcpy(str3, "buffer_2\n");
+	char *str4 = malloc(17);
+	strcpy(str4, "buffer_number_3\n");
 	char *str5 = malloc(8);
 	strcpy(str5, "write5\n");
 	char *str6 = malloc(8);
@@ -60,6 +60,7 @@ int main(void)
 	/************** setup entries **************/
 	/*******************************************/
 	struct aesd_buffer_entry *entry1 = malloc( sizeof( struct aesd_buffer_entry ) );
+	printf("entry1 %p\n", (void *) entry1);
 	entry1->buffptr = str1;
 	entry1->size = strlen( entry1->buffptr );
 
@@ -106,10 +107,20 @@ int main(void)
 	/*******************************************/
 	/************** add entries   **************/
 	/*******************************************/
+	// NOTE:
+	// In the circ buffer struct, the entries in the entry array are statically allocated
+	// what the ...add_entry() function does is to copy the data from the input structs into the 
+	// statically allocated entry
+	// It is not setting a point to the entry that it is adding
+	// therefore, we can free each entry here after it is used.
 	aesd_circular_buffer_add_entry(&circ_buff, entry1);
+	free(entry1);
 	aesd_circular_buffer_add_entry(&circ_buff, entry2);
+	free(entry2);
 	aesd_circular_buffer_add_entry(&circ_buff, entry3);
+	free(entry3);
 	aesd_circular_buffer_add_entry(&circ_buff, entry4);
+	free(entry4);
 
 	/*******************************************/
 	/************** test position search func **************/
@@ -135,23 +146,49 @@ int main(void)
 	/*******************************************/
 	
 	aesd_circular_buffer_add_entry(&circ_buff, entry5);		// 5th
+	free(entry5);
 	aesd_circular_buffer_add_entry(&circ_buff, entry6);		// 6th
+	free(entry6);
 	aesd_circular_buffer_add_entry(&circ_buff, entry7);		// 7th
+	free(entry7);
 	aesd_circular_buffer_add_entry(&circ_buff, entry8);		// 8th
+	free(entry8);
 	aesd_circular_buffer_add_entry(&circ_buff, entry9);		// 9th
+	free(entry9);
 	aesd_circular_buffer_add_entry(&circ_buff, entry10);	// 10th
+	free(entry10);
 	
+	// 11th
 	const char *rtn_ptr = NULL;
 	rtn_ptr = aesd_circular_buffer_add_entry(&circ_buff, entry11);
-	rtn_ptr=rtn_ptr;
+	free(entry11);
 	
 	if ( rtn_ptr != NULL ) {
 		printf("freeing overwritten memory\n");
 		free( (void *) rtn_ptr);
 	}
-		
 
-	/*
+	/*******************************************/
+	/************** aesd_read() development **************/
+	/*******************************************/
+	// New 5/9/2026
+	// for aesd_read() in the driver we need to return all buffer contents
+	// here i will develop a way to do that
+
+	// print out all contents using the macro
+	uint8_t idx = 0;
+	struct aesd_buffer_entry *entryptr = NULL;
+	AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &circ_buff, idx) {
+		printf("aesd_read() style loop: entryptr->buffptr: %s\n", entryptr->buffptr);
+		printf("aesd_read() style loop: circ buffer idx: %i\n", idx);
+	}
+
+	// start at a given position and print out all the contents
+	loff_t *f_pos;
+	long int rd_char_offset = 0;
+	f_pos = &rd_char_offset;
+	f_pos = f_pos;
+
 	char_pos = 100;
 	ret_ent = NULL;
 	ret_offset = 99;
@@ -164,23 +201,24 @@ int main(void)
 	} else {
 		printf("nothing found at char_pos = %lu\n", char_pos);
 	}
-	*/
 	
 	if ( DO_FREE_MEM ) {
 
 		//free(ret_ent); // can't figure out how to free this if dynamically alloc'd
 
-	 	uint8_t index;
-	 	int i;
-	 	struct aesd_buffer_entry *entryptr;
+	 	uint8_t index = 0;
+	 	entryptr = NULL;
 		AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &circ_buff, index) {
 			if ( entryptr->buffptr != NULL )
 			{
+				// loop through each entry letter by letter
+				/*
 				char c;
 				for( i = 0; i < entryptr->size; i++ ) {
 					c = *( entryptr->buffptr + i);
 					printf("%c\n", c);
 				}
+				*/
 
 				printf("*****************************\n");
 				printf("entryptr->size: %zu\n", entryptr->size);
@@ -207,9 +245,12 @@ int main(void)
 				
 			}
 			free((void *) entryptr->buffptr);
-			//free(entryptr);		// freeing here doesn't work for some reason
+			// free(entryptr);		// WRONG! the entries in circ buff entry array are statically allocated
 			
 		}
+
+		/* if we hadn't freed this after each add_entry call we would need to do so here
+
 		free(entry1);
 		free(entry2);
 		free(entry3);
@@ -221,10 +262,9 @@ int main(void)
 		free(entry9);
 		free(entry10);
 		free(entry11);
-		free( (void *) entry11->buffptr);
+		*/
 	}
 
-	
 
 	return 0;
 }

@@ -36,11 +36,11 @@ int aesd_open(struct inode *inode, struct file *filp)
     /***********************************************************
      * TODO: handle open
      */
-/*
+
     struct aesd_dev *dev;        // device information 
     dev = container_of(inode->i_cdev, struct aesd_dev, cdev);
     filp->private_data = dev;
-*/
+
     /*
      * TODO: handle open
      ***********************************************************/
@@ -140,19 +140,19 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     /************************************************************
      * TODO: handle write
      */
-
-    ssize_t retval = -ENOMEM;   /* value used in "goto out" statements */
+    
+    ssize_t retval = -ENOMEM;   // value used in "goto out" statements
     struct aesd_dev *dev = filp->private_data;
     struct aesd_buffer_entry *g_ent = dev->g_ent;
+        
 
     // Lock data
-    /*
-    if (mutex_lock_interruptible(&dev->lock))
-        return -ERESTARTSYS;
-    */
+    // if (mutex_lock_interruptible(&dev->lock))
+    //    return -ERESTARTSYS;
 
     // TODO: set return values similar to scull_write
 
+    
     // allocate memory for this write
     // if we are starting with an empty buffer, we can just allocate @param count bytes
     // if our buffer has data from a previous write, we need to allocate more
@@ -163,6 +163,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         goto out;
     }
     memset(l_ent, 0, sizeof(struct aesd_buffer_entry));
+    PDEBUG("allocated memory for l_ent\n");
 
     // this allocation accounts for existing write data to the buff pointed to by g_ent
     // if no existing data in g_ent, the size must be zero and the pointer must be NULL
@@ -174,7 +175,9 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         goto out;
     }
     l_ent->size = 0;
+    PDEBUG("allocated memory for l_ent->buffptr\n");
 
+    /*
     // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
     if ( g_ent->buffptr != NULL ) {
         PDEBUG("copying previous write into newly alloc'd memory\n");
@@ -235,7 +238,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     kfree(l_ent->buffptr);
     kfree(l_ent);
     l_ent = NULL;
-
+    */
     /*
      * TODO: handle write
      ************************************************************/
@@ -289,6 +292,7 @@ int aesd_init_module(void)
     PDEBUG("&aesd_device.circ_buff: %p\n", (void *) &aesd_device.circ_buff );
     PDEBUG("&aesd_device.lock: %p\n", (void *) &aesd_device.lock );
     PDEBUG("&aesd_device.g_ent: %p\n", (void *) &aesd_device.g_ent );
+    PDEBUG("aesd_device.g_ent: %p\n", aesd_device.g_ent );
 
     // initialize buffer
     aesd_circular_buffer_init( &aesd_device.circ_buff );
@@ -297,11 +301,21 @@ int aesd_init_module(void)
     mutex_init( &aesd_device.lock );
 
     // initialize statically allocatted aesd_buffer_entry g_ent 
-    //aesd_device.g_ent->buffptr = NULL;
+    // WRONG!! the value of aesd_device.g_ent was set to zero, so it points to location 0
+    // we cannot dereference it
+    // aesd_device.g_ent->buffptr = NULL;
     // aesd_device.g_ent->size = 0;
 
-    // dynamically allocate aesd_buffer_entry g_ent 
-    // aesd_device.g_ent->buffptr = kmalloc( sizeof(char *), GFP_KERNEL );
+    // dynamically allocate aesd_buffer_entry and point g_ent to it
+    struct aesd_buffer_entry *ent = kmalloc( sizeof( struct aesd_buffer_entry ), GFP_KERNEL );
+    //TODO handle ENOMEM
+    PDEBUG("ent: %p\n", (void *) ent );
+    aesd_device.g_ent = ent;
+    PDEBUG("aesd_device.g_ent: %p\n", (void *) aesd_device.g_ent );
+
+    // initialize values in g_ent structure
+    aesd_device.g_ent->buffptr = NULL;
+    aesd_device.g_ent->size = 0;
 
 
     /**
@@ -335,7 +349,8 @@ void aesd_cleanup_module(void)
      * TODO: cleanup AESD specific poritions here as necessary
      */
 
-    
+    PDEBUG("Freeing aesd_device.g_ent\n");
+    kfree( aesd_device.g_ent );
 
      /*
      * TODO: cleanup AESD specific poritions here as necessary
