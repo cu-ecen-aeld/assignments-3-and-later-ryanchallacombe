@@ -66,6 +66,8 @@ int aesd_release(struct inode *inode, struct file *filp)
         }
     }
 
+    // TODO free g_ent->buffptr
+
      /*
      * TODO: handle release
      ************************************************************/
@@ -144,6 +146,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     ssize_t retval = -ENOMEM;   // value used in "goto out" statements
     struct aesd_dev *dev = filp->private_data;
     struct aesd_buffer_entry *g_ent = dev->g_ent;
+    PDEBUG("g_ent: %p\n", (void *) g_ent );
         
 
     // Lock data
@@ -177,7 +180,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     l_ent->size = 0;
     PDEBUG("allocated memory for l_ent->buffptr\n");
 
-    /*
+    
     // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
     if ( g_ent->buffptr != NULL ) {
         PDEBUG("copying previous write into newly alloc'd memory\n");
@@ -187,6 +190,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         g_ent->buffptr = NULL;
         g_ent->size = 0;
     }
+
 
     // copy data from user
     // unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
@@ -199,6 +203,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // see how scull does it
 
     // loop through buffer to see if '\n' character is found
+    // echo "hello" > /dev/aesdchar: gives newline at index 5 with 6 bytes copied
     char c;
     char newline_found = 0;
     for(int i=0; i <= l_ent->size; i++ ) {
@@ -210,6 +215,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         }
     }
 
+    // here
     // if newline found, write to circular buffer
     if ( newline_found ) {
 
@@ -218,9 +224,10 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         //      Or be NULL if nothing overwritten
         const char *ret_ptr = NULL;
         ret_ptr = aesd_circular_buffer_add_entry( &dev->circ_buff, l_ent );
+        PDEBUG("circular buffer entry added\n");
         if ( ret_ptr != NULL ) {
             PDEBUG("freeing overwritten buffer entry\n");
-            kfree(ret_ptr);
+            //kfree(ret_ptr);
         }
 
     }
@@ -232,6 +239,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         g_ent->size = l_ent->size;
     }
 
+    /*
     // Because the aesd_circular_buffer_add_entry() function simply copies
     // the pointer and size into a statically allocated array of entries,
     // we can free and reset l_ent here
@@ -239,6 +247,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     kfree(l_ent);
     l_ent = NULL;
     */
+
     /*
      * TODO: handle write
      ************************************************************/
