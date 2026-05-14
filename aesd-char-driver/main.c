@@ -27,9 +27,14 @@ int aesd_minor =   0;
 MODULE_AUTHOR("Ryan Challacombe");
 MODULE_LICENSE("Dual BSD/GPL");
 
-struct aesd_dev aesd_device;
+struct aesd_dev aesd_device;        // global scope
 
-int aesd_open(struct inode *inode, struct file *filp)
+/************************************************************
+* aesd_open
+*   This is called everytime the userspace interacts with the driver
+*   this is the first thing the driver does
+*/
+int aesd_open(struct inode *inode, struct file *filp)   
 {
     PDEBUG("starting aesd_open() function");
 
@@ -48,6 +53,12 @@ int aesd_open(struct inode *inode, struct file *filp)
     return 0;
 }
 
+/************************************************************
+* aesd_release
+*   This is called everytime the userspace interacts with the driver
+*   this is the last thing the driver does before finishing it's transaction
+*   e.g. after a call to write or read
+*/
 int aesd_release(struct inode *inode, struct file *filp)
 {
     PDEBUG("starting aesd_release() function");
@@ -69,7 +80,6 @@ int aesd_release(struct inode *inode, struct file *filp)
 *   This is a read from the driver to the userspace
 *   It is a write from the driver's perspective
 */
-
 ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
                 loff_t *f_pos)
 {
@@ -131,7 +141,6 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 *   This is a write to the driver from the userspace
 *   It is a read from the driver's perspective
 */
-
 ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
                 loff_t *f_pos)
 {
@@ -294,7 +303,10 @@ static int aesd_setup_cdev(struct aesd_dev *dev)
     return err;
 }
 
-
+/************************************************************
+* aesd_init_module
+*   This is called when the module is loaded by the kernel  
+*/
 int aesd_init_module(void)
 {
     PDEBUG("Starting aesd_init_module()\n");
@@ -361,6 +373,10 @@ int aesd_init_module(void)
     */
 }
 
+/************************************************************
+* aesd_cleanup_module
+*   This is called when the module is unloaded by the kernel  
+*/
 void aesd_cleanup_module(void)
 {
     PDEBUG("Starting aesd_cleanup_module()\n");
