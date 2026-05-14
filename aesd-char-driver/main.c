@@ -55,18 +55,7 @@ int aesd_release(struct inode *inode, struct file *filp)
     /************************************************************
      * TODO: handle release
      */
-    struct aesd_dev *dev = filp->private_data;
 
-    uint8_t index;
-    struct aesd_buffer_entry *entryptr;
-    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
-        if (entryptr->buffptr != NULL) {
-            PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
-            kfree((void *) entryptr->buffptr);            
-        }
-    }
-
-    // TODO free g_ent->buffptr
 
      /*
      * TODO: handle release
@@ -85,6 +74,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
                 loff_t *f_pos)
 {
     PDEBUG("starting aesd_read() function");
+    PDEBUG("requesting a read of %zu bytes with offset %lld", count, *f_pos);
     ssize_t retval = 0;     // number of bytes read
     
     
@@ -103,18 +93,28 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
     ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *f_pos, &ret_offset ); 
 
-    // 
+    if ( ret_ent == NULL) {
+        // nothing to read
+        retval = 0;
+        PDEBUG("Nothing to read. aesd_read() returning with 0\n");
+    } else {
+        unsigned long uncopied_count;
+        // unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
+        uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr, ret_ent->size );
+        retval = ret_ent->size - uncopied_count;
 
-    unsigned long uncopied_count;
-    // unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
-    uncopied_count = copy_to_user( buf, &(ret_ent->buffptr), ret_ent->size );
-    retval = count - uncopied_count;
+        PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
-    // update pointer to point to next offset
-    f_pos = f_pos - ret_offset + ret_ent->size;
+        // update pointer to point to next entry
+        // PDEBUG("ret_offset: %zu\n", ret_offset);
+        PDEBUG("*f_pos: %lld\n", *f_pos);
+        PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
+        *f_pos = *f_pos + ret_ent->size;
+        PDEBUG("f_pos updated to %lld\n", *f_pos);
+
+    }
 
 
-    PDEBUG("read %zu bytes with offset %lld", retval, *f_pos);
 
      /*
      * TODO: handle read
@@ -243,17 +243,16 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         g_ent->size = l_ent->size;
     }
 
-    /*
     // DEBUG
     // read from aesd circular buffer
     size_t ret_offset = 0;                  // holds the offset of the first char in the returned buffer entry
     struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
-    loff_t *pos;
-    *pos = 0;
+    loff_t *pos, position_zero = 0;
+    pos = &position_zero;
     ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *pos, &ret_offset ); 
-    PDEBUG("ret_ent->buffptr: %p\n", (void *) ret_ent->buffptr;
-    PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
-    */
+    PDEBUG("ret_ent->buffptr (for position_zero): %p\n", (void *) ret_ent->buffptr);
+    PDEBUG("ret_ent->size (for position_zero): %zu\n", ret_ent->size);
+    
 
     // Because the aesd_circular_buffer_add_entry() function simply copies
     // the pointer and size into a statically allocated array of entries,
@@ -372,6 +371,17 @@ void aesd_cleanup_module(void)
     /**********************************************************
      * TODO: cleanup AESD specific poritions here as necessary
      */
+
+    struct aesd_dev *dev = &aesd_device;
+
+    uint8_t index;
+    struct aesd_buffer_entry *entryptr;
+    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
+        if (entryptr->buffptr != NULL) {
+            PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
+            kfree((void *) entryptr->buffptr);            
+        }
+    }
 
     PDEBUG("Freeing aesd_device.g_ent\n");
     kfree( aesd_device.g_ent );
