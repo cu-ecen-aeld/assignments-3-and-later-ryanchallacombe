@@ -204,7 +204,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     PDEBUG("*** l_ent->buffptr + g_ent_start_size = %p\n", (void *) (l_ent->buffptr + g_ent_start_size) );
     // unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
     size_t uncopied_count = count;
-    uncopied_count = copy_from_user( (void *) l_ent->buffptr, buf, count);
+    uncopied_count = copy_from_user( (void *) (l_ent->buffptr + g_ent_start_size), buf, count);
     PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
     PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
