@@ -87,16 +87,13 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     PDEBUG("requesting a read of %zu bytes with offset %lld", count, *f_pos);
     ssize_t retval = 0;     // number of bytes read
     
-    
     /***********************************************************
      * TODO: handle read
      */
     struct aesd_dev *dev = filp->private_data;
 
-    /*
     if (mutex_lock_interruptible(&dev->lock))
         return -ERESTARTSYS;
-    */
 
     // read from aesd circular buffer
     size_t ret_offset;                      // holds the offset of the first char in the returned buffer entry
@@ -123,15 +120,12 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     }
-
-
-
      /*
      * TODO: handle read
      ************************************************************/
 
     //out:
-        //mutex_unlock(&dev->lock);
+        mutex_unlock(&dev->lock);
         return retval;
 }
 
@@ -159,8 +153,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         
 
     // Lock data
-    // if (mutex_lock_interruptible(&dev->lock))
-    //    return -ERESTARTSYS;
+    if (mutex_lock_interruptible(&dev->lock))
+        return -ERESTARTSYS;
 
     // TODO: set return values similar to scull_write
 
@@ -192,9 +186,10 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     
     // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
     if ( g_ent->buffptr != NULL ) {
-        PDEBUG("copying previous write into newly alloc'd memory\n");
+        PDEBUG("*** copying previous write into newly alloc'd memory\n");
         memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
         l_ent->size = g_ent->size;        // this is how many bytes we copied into l_ent 
+        PDEBUG("*** after memcpy l_ent->size = %zu\n", l_ent->size);
         kfree( g_ent->buffptr );
         g_ent->buffptr = NULL;
         g_ent->size = 0;
@@ -207,11 +202,12 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     uncopied_count = copy_from_user( (void *) l_ent->buffptr, buf, count);
     PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
+    PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
     retval = count - uncopied_count;
 
     // debug
     PDEBUG("l_ent->buffptr: %p\n", (void *) l_ent->buffptr);
-    PDEBUG("l_ent->size: %zu\n", l_ent->size);
+    //PDEBUG("l_ent->size: %zu\n", l_ent->size);
 
     // TODO handle partial copies
     // see how scull does it
@@ -232,7 +228,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // if newline found, write to circular buffer
     if ( newline_found ) {
 
-        // Place value into buffer
+        // Place value into the circular buffer
         // return value will point to memory that is overwritten
         //      Or be NULL if nothing overwritten
         const char *ret_ptr = NULL;
@@ -240,7 +236,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         PDEBUG("circular buffer entry added\n");
         if ( ret_ptr != NULL ) {
             PDEBUG("freeing overwritten buffer entry\n");
-            //kfree(ret_ptr);
+            kfree(ret_ptr);
         }
 
     }
@@ -250,8 +246,10 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         // save it to g_ent for use with next write
         g_ent->buffptr = l_ent->buffptr;
         g_ent->size = l_ent->size;
+        PDEBUG("No newline found. Data stored in g_ent. g_ent->size = %zu\n", g_ent->size);
     }
 
+    /*
     // DEBUG
     // read from aesd circular buffer
     size_t ret_offset = 0;                  // holds the offset of the first char in the returned buffer entry
@@ -261,7 +259,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *pos, &ret_offset ); 
     PDEBUG("ret_ent->buffptr (for position_zero): %p\n", (void *) ret_ent->buffptr);
     PDEBUG("ret_ent->size (for position_zero): %zu\n", ret_ent->size);
-    
+    // DEBUG
+    */
 
     // Because the aesd_circular_buffer_add_entry() function simply copies
     // the pointer and size into a statically allocated array of entries,
@@ -276,7 +275,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
      ************************************************************/
 
     out:
-        //mutex_unlock(&dev->lock);
+        mutex_unlock(&dev->lock);
         return retval;
 }
 

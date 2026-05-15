@@ -47,9 +47,11 @@ __used __section("__versions") = {
 	{ 0x6a7b86fa, "cdev_add" },
 	{ 0x4c03a563, "random_kmalloc_seed" },
 	{ 0xcefb0c9f, "__mutex_init" },
+	{ 0x89940875, "mutex_lock_interruptible" },
 	{ 0x5b8239ca, "__x86_return_thunk" },
 	{ 0x6b10bee1, "_copy_to_user" },
 	{ 0x6091b333, "unregister_chrdev_region" },
+	{ 0x3213f038, "mutex_unlock" },
 	{ 0xbf55f104, "kmalloc_trace" },
 	{ 0x54b1fac6, "__ubsan_handle_load_invalid_value" },
 	{ 0x81daace6, "cdev_init" },
@@ -62,4 +64,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "D7F02A9C1ED3FA2F34177F0");
+MODULE_INFO(srcversion, "30D939E42C1D614557B3719");
