@@ -185,6 +185,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     
     // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
+    // first we need to save the size of the buffer for later use
+    size_t g_ent_start_size = g_ent->size;
     if ( g_ent->buffptr != NULL ) {
         PDEBUG("*** copying previous write into newly alloc'd memory\n");
         memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
@@ -197,6 +199,9 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
 
     // copy data from user
+    PDEBUG("*** l_ent->buffptr = %p\n", (void *) l_ent->buffptr);
+    PDEBUG("*** g_ent_start_size = %zu\n", g_ent_start_size);
+    PDEBUG("*** l_ent->buffptr + g_ent_start_size = %p\n", (void *) (l_ent->buffptr + g_ent_start_size) );
     // unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
     size_t uncopied_count = count;
     uncopied_count = copy_from_user( (void *) l_ent->buffptr, buf, count);
