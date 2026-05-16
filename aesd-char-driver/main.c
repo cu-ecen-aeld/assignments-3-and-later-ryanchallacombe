@@ -46,9 +46,7 @@ int aesd_open(struct inode *inode, struct file *filp)
     dev = container_of(inode->i_cdev, struct aesd_dev, cdev);
     filp->private_data = dev;
 
-    /*
-     * TODO: handle open
-     ***********************************************************/
+    /************************************************************/
 
     return 0;
 }
@@ -67,10 +65,9 @@ int aesd_release(struct inode *inode, struct file *filp)
      * TODO: handle release
      */
 
+    // No actions here
 
-     /*
-     * TODO: handle release
-     ************************************************************/
+    /************************************************************/
 
     return 0;
 }
@@ -106,27 +103,22 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         PDEBUG("Nothing to read. aesd_read() returning with 0\n");
     } else {
         unsigned long uncopied_count;
-        // unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
         uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr, ret_ent->size );
         retval = ret_ent->size - uncopied_count;
 
         PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update pointer to point to next entry
-        // PDEBUG("ret_offset: %zu\n", ret_offset);
         PDEBUG("*f_pos: %lld\n", *f_pos);
         PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
         *f_pos = *f_pos + ret_ent->size;
         PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     }
-     /*
-     * TODO: handle read
-     ************************************************************/
+    /************************************************************/
 
-    //out:
-        mutex_unlock(&dev->lock);
-        return retval;
+    mutex_unlock(&dev->lock);
+    return retval;
 }
 
 
@@ -149,16 +141,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     ssize_t retval = -ENOMEM;   // value used in "goto out" statements
     struct aesd_dev *dev = filp->private_data;
     struct aesd_buffer_entry *g_ent = dev->g_ent;
-    PDEBUG("g_ent: %p\n", (void *) g_ent );
-        
 
     // Lock data
     if (mutex_lock_interruptible(&dev->lock))
         return -ERESTARTSYS;
 
-    // TODO: set return values similar to scull_write
-
-    
     // allocate memory for this write
     // if we are starting with an empty buffer, we can just allocate @param count bytes
     // if our buffer has data from a previous write, we need to allocate more
@@ -169,10 +156,9 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         goto out;
     }
     memset(l_ent, 0, sizeof(struct aesd_buffer_entry));
-    PDEBUG("allocated memory for l_ent\n");
 
     // this allocation accounts for existing write data to the buff pointed to by g_ent
-    // if no existing data in g_ent, the size must be zero and the pointer must be NULL
+    // if no existing data in g_ent, the size is zero and the pointer is NULL
     l_ent->buffptr = kmalloc(count + g_ent->size, GFP_KERNEL);
     if ( l_ent->buffptr == NULL ) {
         PDEBUG("error allocating for l_ent->buffptr\n");
@@ -181,12 +167,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         goto out;
     }
     l_ent->size = 0;
-    PDEBUG("allocated memory for l_ent->buffptr\n");
-
     
-    // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
-    // first we need to save the size of the buffer for later use
+    // save the size of the g_ent buffer for later use
     size_t g_ent_start_size = g_ent->size;
+
+    // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
     if ( g_ent->buffptr != NULL ) {
         PDEBUG("*** copying previous write into newly alloc'd memory\n");
         memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
@@ -199,23 +184,14 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
 
     // copy data from user
-    PDEBUG("*** l_ent->buffptr = %p\n", (void *) l_ent->buffptr);
-    PDEBUG("*** g_ent_start_size = %zu\n", g_ent_start_size);
-    PDEBUG("*** l_ent->buffptr + g_ent_start_size = %p\n", (void *) (l_ent->buffptr + g_ent_start_size) );
-    // unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
+    // note that we need to account for the size of any data from g_ent that was copied into l_ent
+    // by starting the write at that offset
     size_t uncopied_count = count;
     uncopied_count = copy_from_user( (void *) (l_ent->buffptr + g_ent_start_size), buf, count);
     PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
     PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
     retval = count - uncopied_count;
-
-    // debug
-    PDEBUG("l_ent->buffptr: %p\n", (void *) l_ent->buffptr);
-    //PDEBUG("l_ent->size: %zu\n", l_ent->size);
-
-    // TODO handle partial copies
-    // see how scull does it
 
     // loop through buffer to see if '\n' character is found
     // echo "hello" > /dev/aesdchar: gives newline at index 5 with 6 bytes copied
@@ -232,7 +208,6 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     // if newline found, write to circular buffer
     if ( newline_found ) {
-
         // Place value into the circular buffer
         // return value will point to memory that is overwritten
         //      Or be NULL if nothing overwritten
@@ -254,30 +229,14 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         PDEBUG("No newline found. Data stored in g_ent. g_ent->size = %zu\n", g_ent->size);
     }
 
-    /*
-    // DEBUG
-    // read from aesd circular buffer
-    size_t ret_offset = 0;                  // holds the offset of the first char in the returned buffer entry
-    struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
-    loff_t *pos, position_zero = 0;
-    pos = &position_zero;
-    ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *pos, &ret_offset ); 
-    PDEBUG("ret_ent->buffptr (for position_zero): %p\n", (void *) ret_ent->buffptr);
-    PDEBUG("ret_ent->size (for position_zero): %zu\n", ret_ent->size);
-    // DEBUG
-    */
-
     // Because the aesd_circular_buffer_add_entry() function simply copies
     // the pointer and size into a statically allocated array of entries,
     // we can free and reset l_ent here
-    // PDEBUG("freeing l_ent->buffptr and l_ent\n");
-    //kfree(l_ent->buffptr);
+    // PDEBUG("freeing l_ent\n");
     //kfree(l_ent);
     //l_ent = NULL;
 
-    /*
-     * TODO: handle write
-     ************************************************************/
+    /************************************************************/
 
     out:
         mutex_unlock(&dev->lock);
@@ -347,7 +306,11 @@ int aesd_init_module(void)
 
     // dynamically allocate aesd_buffer_entry and point g_ent to it
     struct aesd_buffer_entry *ent = kmalloc( sizeof( struct aesd_buffer_entry ), GFP_KERNEL );
-    //TODO handle ENOMEM
+    if (ent == NULL) {
+        PDEBUG("error allocating for g_ent. \n");
+        result = -ENOMEM;
+        goto init_fail;       
+    }
     PDEBUG("ent: %p\n", (void *) ent );
     aesd_device.g_ent = ent;
     PDEBUG("aesd_device.g_ent: %p\n", (void *) aesd_device.g_ent );
@@ -357,9 +320,7 @@ int aesd_init_module(void)
     aesd_device.g_ent->size = 0;
 
 
-    /**
-     * TODO: initialize the AESD specific portion of the device
-     **********************************************************/
+    /**********************************************************/
 
     result = aesd_setup_cdev(&aesd_device);
 
@@ -370,11 +331,10 @@ int aesd_init_module(void)
     PDEBUG("Exiting aesd_init_module() with return = %i\n", result);
     return result;
 
-    /*
     init_fail:
+        printk(KERN_ERR "Error initializing aesdchar driver. Exiting\n");
         aesd_cleanup_module();
         return result;
-    */
 }
 
 /************************************************************
@@ -406,14 +366,10 @@ void aesd_cleanup_module(void)
     PDEBUG("Freeing aesd_device.g_ent\n");
     kfree( aesd_device.g_ent );
 
-     /*
-     * TODO: cleanup AESD specific poritions here as necessary
-     **********************************************************/
+    /**********************************************************/
 
     unregister_chrdev_region(devno, 1);
 }
-
-
 
 module_init(aesd_init_module);
 module_exit(aesd_cleanup_module);
