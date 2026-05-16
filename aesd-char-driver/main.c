@@ -233,8 +233,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // the pointer and size into a statically allocated array of entries,
     // we can free and reset l_ent here
     // PDEBUG("freeing l_ent\n");
-    //kfree(l_ent);
-    //l_ent = NULL;
+    kfree(l_ent);
+    l_ent = NULL;
 
     /************************************************************/
 
