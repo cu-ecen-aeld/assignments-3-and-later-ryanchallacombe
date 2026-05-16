@@ -86,9 +86,14 @@ int recv(int sockfd, void *buf, int len, int flags);
 *	Defines
 **********************************/
 
-#define MAXDATASIZE		1024							// max number of bytes
-#define RECVFILE		"/var/tmp/aesdsocketdata"		// file for storing received messages
-//#define RECVFILE		"/home/ryan/projects/assignments-3-and-later-ryanchallacombe/server/output.txt"	// file for storing received messages
+#define MAXDATASIZE		1024					// max number of bytes
+#define USE_AESD_CHAR_DEVICE	1 				// switch for assignment 8
+
+#ifdef USE_AESD_CHAR_DEVICE	
+#	define RECVFILE		"/dev/aesdchar" 
+#else
+#	define RECVFILE		"/var/tmp/aesdsocketdata"
+#endif
 
 /**********************************
 *	Globals
@@ -143,25 +148,29 @@ int main(int argc, char *argv[]) {
 
 
     /************************* Setup write file *************************/
-	// Remove it if it is already existing
-	errno = 0;
-	FILE *fp;
-	if ( (fp = fopen(wr_file_path, "r")) != NULL ) {
-		printf("Removing file: %s\n", wr_file_path);
-		fclose(fp);
-		if ( (remove(wr_file_path)) == -1)
-			perror("remove");
-	}
+    int fd;
+    if ( !USE_AESD_CHAR_DEVICE ) {
+		// Remove it if it is already existing
+		errno = 0;
+		FILE *fp;
+		if ( (fp = fopen(wr_file_path, "r")) != NULL ) {
+			printf("Removing file: %s\n", wr_file_path);
+			fclose(fp);
+			if ( (remove(wr_file_path)) == -1)
+				perror("remove");
+		}
 
-	// Create file
-	//syslog( LOG_ERR, "Creating file %s.\n", wr_file_path);
-	printf("Creating file: %s.\n", wr_file_path);
-	errno = 0;
-	int fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
-	// For some reason, file access is not correct, so close and reopen as below...
-	close(fd);
-	fd = open( wr_file_path, O_RDWR | O_APPEND);
-	//printf("Write file fd in main(): %d\n", fd);
+		// Create file
+		//syslog( LOG_ERR, "Creating file %s.\n", wr_file_path);
+		printf("Creating file: %s.\n", wr_file_path);
+		errno = 0;
+		fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
+		// For some reason, file access is not correct, so close and reopen as below...
+		close(fd);
+	} else {
+		fd = open( wr_file_path, O_RDWR | O_APPEND);
+		//printf("Write file fd in main(): %d\n", fd);
+	}
 	
 	// Check for errors
 	if ( (errno != 0) || (fd == -1) ) {
@@ -270,32 +279,34 @@ int main(int argc, char *argv[]) {
 	// printf("sizeof(struct sock_thread_data): %lu\n", sizeof(struct sock_thread_data));
 
 	/************* Start Timestamp thread **************/
-	// copy/pasting function start_timestamp_wr_thread() text here
-	struct thread_data td;
-    struct sigevent sev;
-    timer_t timerid;
-    memset(&td, 0, sizeof(struct thread_data));
+	if ( !USE_AESD_CHAR_DEVICE ) {
+		// copy/pasting function start_timestamp_wr_thread() text here
+		struct thread_data td;
+	    struct sigevent sev;
+	    timer_t timerid;
+	    memset(&td, 0, sizeof(struct thread_data));
 
-    td.lock = fd_mutex;
-    td.write_file_fd = fd;
+	    td.lock = fd_mutex;
+	    td.write_file_fd = fd;
 
-    int clock_id = CLOCK_MONOTONIC;
-    memset(&sev, 0, sizeof(struct sigevent));
+	    int clock_id = CLOCK_MONOTONIC;
+	    memset(&sev, 0, sizeof(struct sigevent));
 
-    // Setup a call to timer_thread passing in the td structure as the sigev_value argument
-    sev.sigev_notify = SIGEV_THREAD;
-    sev.sigev_value.sival_ptr = &td;            // point sival to thread_data
-    sev.sigev_notify_function = timer_thread;   // function to run when the timer fires...
+	    // Setup a call to timer_thread passing in the td structure as the sigev_value argument
+	    sev.sigev_notify = SIGEV_THREAD;
+	    sev.sigev_value.sival_ptr = &td;            // point sival to thread_data
+	    sev.sigev_notify_function = timer_thread;   // function to run when the timer fires...
 
-    if ( timer_create(clock_id, &sev, &timerid) != 0 ) {
-        printf("Error %d (%s) creating timer!\n",errno,strerror(errno));
-    } 
+	    if ( timer_create(clock_id, &sev, &timerid) != 0 ) {
+	        printf("Error %d (%s) creating timer!\n",errno,strerror(errno));
+	    } 
 
-    struct timespec start_time;
-    if ( ! setup_timer(clock_id, timerid, TIMER_PERIOD_MS, TIMER_PERIOD_SEC, &start_time) ) 
-    {
-        printf("Error setting up timer.\n");
-    }
+	    struct timespec start_time;
+	    if ( ! setup_timer(clock_id, timerid, TIMER_PERIOD_MS, TIMER_PERIOD_SEC, &start_time) ) 
+	    {
+	        printf("Error setting up timer.\n");
+	    }
+	}
 
 	/********** Loop **********/
 
@@ -414,8 +425,11 @@ int main(int argc, char *argv[]) {
 	if ( close(fd) != 0 ) {
 		printf("error closing write file\n");
 	}
-	if ( timer_delete(timerid) != 0 ) {
-		printf("error deleting timer\n");
+
+	if ( !USE_AESD_CHAR_DEVICE ) {
+		// 5/16/2026 compiler error saying timerid is undeclared, so commenting out
+		//if ( timer_delete(timerid) != 0 )
+		//	printf("error deleting timer\n");	
 	}
 
 	free(local_sock_thread_data);
