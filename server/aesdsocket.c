@@ -87,9 +87,9 @@ int recv(int sockfd, void *buf, int len, int flags);
 **********************************/
 
 #define MAXDATASIZE		1024					// max number of bytes
-#define USE_AESD_CHAR_DEVICE	1 				// switch for assignment 8
+#define USE_AESD_CHAR_DEVICE	1				// switch for assignment 8
 
-#ifdef USE_AESD_CHAR_DEVICE	
+#if USE_AESD_CHAR_DEVICE	
 #	define RECVFILE		"/dev/aesdchar" 
 #else
 #	define RECVFILE		"/var/tmp/aesdsocketdata"
@@ -167,10 +167,10 @@ int main(int argc, char *argv[]) {
 		fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
 		// For some reason, file access is not correct, so close and reopen as below...
 		close(fd);
-	} else {
-		fd = open( wr_file_path, O_RDWR | O_APPEND);
-		//printf("Write file fd in main(): %d\n", fd);
 	}
+	
+	fd = open( wr_file_path, O_RDWR | O_APPEND);
+	printf("Write file fd in main(): %d\n", fd);
 	
 	// Check for errors
 	if ( (errno != 0) || (fd == -1) ) {
@@ -279,11 +279,11 @@ int main(int argc, char *argv[]) {
 	// printf("sizeof(struct sock_thread_data): %lu\n", sizeof(struct sock_thread_data));
 
 	/************* Start Timestamp thread **************/
+	timer_t timerid;
 	if ( !USE_AESD_CHAR_DEVICE ) {
 		// copy/pasting function start_timestamp_wr_thread() text here
 		struct thread_data td;
 	    struct sigevent sev;
-	    timer_t timerid;
 	    memset(&td, 0, sizeof(struct thread_data));
 
 	    td.lock = fd_mutex;
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
 		}
 		else {
 			syslog(LOG_DEBUG, "Server set on port %s. Listening for client\n", port);
-			//printf("Server set on port %s. Listening for client\n", port);
+			printf("Server set on port %s. Listening for client\n", port);
 		}
 
 		// accept() call
@@ -427,9 +427,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	if ( !USE_AESD_CHAR_DEVICE ) {
-		// 5/16/2026 compiler error saying timerid is undeclared, so commenting out
-		//if ( timer_delete(timerid) != 0 )
-		//	printf("error deleting timer\n");	
+		if ( timer_delete(timerid) != 0 )
+			printf("error deleting timer\n");	
 	}
 
 	free(local_sock_thread_data);

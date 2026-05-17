@@ -92,6 +92,8 @@ void *sock_thread_func(void *thread_param) {
                 //printf("Write file fd in sock_thread_func: %d\n", thread_func_args->write_file_fd);
                 line = read_until_term(thread_func_args->write_file_fd, '\n', return_flag);
 
+                syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
+
                 if ( *return_flag == 5 || *return_flag == 4 ) {             // reached EOF, break out of the loop
                     //printf("***return flag: %d\n", *return_flag);
                     //printf("***reached EOF\n");
@@ -111,8 +113,7 @@ void *sock_thread_func(void *thread_param) {
                     //cleanup_func(sockfd, servinfo);
                     //return -1;
                 } else if ( *return_flag == 0 ){                            // memory was sufficient and found a newline char
-                    //printf("***line: %s\n", line);
-                    //printf("***return flag: %d\n", *return_flag);
+                    syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
 
                     // Write to socket
                     int len, bytes_sent;
@@ -124,7 +125,7 @@ void *sock_thread_func(void *thread_param) {
                         //return -1;
                     }
                     
-                    //printf("***sent: %d bytes\n", (uint) bytes_sent);
+                    syslog(LOG_DEBUG, "***sent %d bytes to socket\n", (uint) bytes_sent);
                 } else {
                     break;      // this should never be reached
                 } 
