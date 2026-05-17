@@ -94,9 +94,11 @@ void *sock_thread_func(void *thread_param) {
 
                 syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
 
-                if ( *return_flag == 5 || *return_flag == 4 ) {             // reached EOF, break out of the loop
+                if ( *return_flag == 5 || *return_flag == 4 ) {             // reached EOF without newline char
                     //printf("***return flag: %d\n", *return_flag);
                     //printf("***reached EOF\n");
+                    if ( line != NULL )
+                        syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
                     thread_func_args->thread_success = true; 
                     break;
                 } else if ( *return_flag == 1 || *return_flag == 2 ) {      // malloc or realloc failed
@@ -365,6 +367,8 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     	// read a single character 
     	errno = 0;
     	num_read = read(fd, &c, 1);
+        syslog(LOG_DEBUG, "inside read_until_term function loop: read char c: %c\n", c);
+        syslog(LOG_DEBUG, "inside read_until_term function loop: num_read: %d\n", (uint)num_read);
         //printf("read_until_term read c: %c\n", c);
         // printf("read returned: %d\n", (uint)num_read);
     	if ( num_read == -1) {
@@ -391,8 +395,10 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     	buf[offset] = c;  // Add the byte onto the buffer
     	//printf("buf[offset]: %c\n", buf[offset] );
     	offset++;
+        syslog(LOG_DEBUG, "inside read_until_term function loop: new offset: %d\n", offset);
     	//printf("new offset: %d\n", offset);
     	tot_read++;
+        syslog(LOG_DEBUG, "inside read_until_term function loop: tot_read: %zu\n", tot_read);
         *rtn_flag = 0; 
 
     }  while ( buf[offset-1] != term );
