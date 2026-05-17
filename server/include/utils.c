@@ -35,6 +35,8 @@ extern char *wr_file_path;
 // function to call when starting the socket thread
 void *sock_thread_func(void *thread_param) {
 
+    syslog(LOG_DEBUG, "Starting aesdsocket sock_thread_func()\n");
+
     // point a local struct pointer to the the value pointed to by the argument
     //struct thread_data* thread_func_args = (struct thread_data *) thread_param;
     struct sock_thread_data *thread_func_args = (struct sock_thread_data*) thread_param;
@@ -49,6 +51,7 @@ void *sock_thread_func(void *thread_param) {
     int *return_flag, no_flag_val = -1;     
     return_flag = &no_flag_val;     // set return_flag to a value that the function read_until_term doesn't use
     errno = 0;  
+    syslog(LOG_DEBUG, "******* starting read_until_term from spkr_fd\n");
     if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
         printf("Error in read_until_term. Returning -1\n");
         free(line);
@@ -85,6 +88,7 @@ void *sock_thread_func(void *thread_param) {
             // set file position
             lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
 
+            syslog(LOG_DEBUG, "******* starting read_until_term loop, reading from thread_func_args->write_file_fd\n");
             // loop to read from file and write to socket stream
             // line has been freed but we will reuse it here
             for (;;) {
