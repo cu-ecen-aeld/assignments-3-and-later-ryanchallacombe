@@ -26,6 +26,7 @@ int writer_func_fd(int fd, const char *buf);
 
 bool caught_signal;
 extern char *wr_file_path;
+extern bool use_aesd_char_device;
 
 /////////////////////////////
 //		Function definitions
@@ -43,7 +44,7 @@ void *sock_thread_func(void *thread_param) {
     int ret = 0;
     int spkr_fd = thread_func_args->client_fd;
 
-    int fd = thread_func_args->write_file_fd;
+    int fd = thread_func_args->write_file_fd;       // if using aesd_char_device this is zero until later when opened
 
     /************************* Receive data *************************/
 
@@ -66,11 +67,17 @@ void *sock_thread_func(void *thread_param) {
         if ( pthread_mutex_lock(thread_func_args->mutex) != 0 ) {
             printf("Error %d (%s) locking thread data!\n", errno, strerror(errno));
         } else {
+
+            // if using driver, open the driver here
+            if (use_aesd_char_device) {
+                fd = open( wr_file_path, O_RDWR | O_APPEND);
+                syslog(LOG_DEBUG, "Opening driver fd = %d from sock_thread_func\n", fd);            
+            }        
+
             // Write to file
-            //printf("Mutex lock completed.\n");
             ret = lseek(fd, (off_t) 0, SEEK_SET); 
             //printf("lseek returns: %d\n", ret);
-            if ( (ret = writer_func_fd(thread_func_args->write_file_fd, line)) != 0) {
+            if ( (ret = writer_func_fd(fd, line)) != 0) {
                 printf("writer_func returned: %d\n", ret);
                 free(line);
                 //cleanup_func(sockfd, servinfo);
@@ -86,15 +93,14 @@ void *sock_thread_func(void *thread_param) {
             return_flag = &no_flag_val;             // reset return flag value
 
             // set file position
-            lseek(thread_func_args->write_file_fd, (off_t) 0, SEEK_SET); 
+            lseek(fd, (off_t) 0, SEEK_SET); 
 
-            syslog(LOG_DEBUG, "******* starting read_until_term loop, reading from thread_func_args->write_file_fd\n");
+            syslog(LOG_DEBUG, "******* starting read_until_term loop, reading from fd\n");
             // loop to read from file and write to socket stream
             // line has been freed but we will reuse it here
             for (;;) {
 
-                //printf("Write file fd in sock_thread_func: %d\n", thread_func_args->write_file_fd);
-                line = read_until_term(thread_func_args->write_file_fd, '\n', return_flag);
+                line = read_until_term(fd, '\n', return_flag);
 
                 syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
 
@@ -140,6 +146,14 @@ void *sock_thread_func(void *thread_param) {
                 line = NULL;
             }
 
+            if (use_aesd_char_device) {
+                if ( close(fd) != 0 ) {
+                syslog(LOG_DEBUG, "error closing driver file from sock_thread_func\n");
+                } else {
+                    syslog(LOG_DEBUG, "Closing driver from sock_thread_func\n");            
+                }
+            }
+
             if ( pthread_mutex_unlock(thread_func_args->mutex) != 0 ) {
                 errno = 0;
                 printf("Error %d (%s) unlocking thread data!\n",errno,strerror(errno));
@@ -149,6 +163,8 @@ void *sock_thread_func(void *thread_param) {
             }
         }
     }
+    
+
     thread_func_args->thread_complete = true;
     return thread_param;
 }

@@ -109,6 +109,7 @@ int num_threads_created = 0;
 int num_removed_from_list = 0;
 int num_mallocd = 0;
 int num_freed = 0;
+bool use_aesd_char_device = USE_AESD_CHAR_DEVICE;
 
 /**********************************
 *	Main
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 
     /************************* Setup write file *************************/
-    int fd;
+    int fd = 0;
     if ( !USE_AESD_CHAR_DEVICE ) {
 		// Remove it if it is already existing
 		errno = 0;
@@ -167,20 +168,20 @@ int main(int argc, char *argv[]) {
 		fd = creat( wr_file_path, S_IRWXU | S_IRWXG | S_IRWXO );
 		// For some reason, file access is not correct, so close and reopen as below...
 		close(fd);
-	}
 	
-	fd = open( wr_file_path, O_RDWR | O_APPEND);
-	printf("Write file fd in main(): %d\n", fd);
-	
-	// Check for errors
-	if ( (errno != 0) || (fd == -1) ) {
-		//char *error_str = strerror(errno);
-		//syslog( LOG_ERR, "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
-		//syslog( LOG_ERR, "Returning with status = 1.\n" );
-		printf( "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
-		printf( "Returning with status = -1.\n" );
-		rtn_val = -1;
-		goto DONE;
+		fd = open( wr_file_path, O_RDWR | O_APPEND);
+		printf("Write file fd in main(): %d\n", fd);
+		
+		// Check for errors
+		if ( (errno != 0) || (fd == -1) ) {
+			//char *error_str = strerror(errno);
+			//syslog( LOG_ERR, "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
+			//syslog( LOG_ERR, "Returning with status = 1.\n" );
+			printf( "Error %d (%s) creating file %s.\n", errno, strerror(errno), wr_file_path );
+			printf( "Returning with status = -1.\n" );
+			rtn_val = -1;
+			goto DONE;
+		}
 	}
 	
 	/************************* Socket *************************/

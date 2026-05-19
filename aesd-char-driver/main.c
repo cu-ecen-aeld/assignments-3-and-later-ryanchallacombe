@@ -109,16 +109,18 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
             count = ret_ent->size;
 
         PDEBUG("copy_to_user count = %zu bytes", count);
+        PDEBUG("copy_to_user circular buffer f_pos: %lld", *f_pos);
+        PDEBUG("copy_to_user circular buffer ret_ent offset (*ret_offset): %zu", ret_offset);
 
         unsigned long uncopied_count, copied_count;
         // uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr, ret_ent->size );
-        uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr, count );
+        uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr + ret_offset, count );
         copied_count = retval = count - uncopied_count;
 
         PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update pointer to point to next entry
-        PDEBUG("*f_pos: %lld\n", *f_pos);
+        // PDEBUG("*f_pos: %lld\n", *f_pos);
         //PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
         //*f_pos = *f_pos + ret_ent->size;
         *f_pos = *f_pos + copied_count;
