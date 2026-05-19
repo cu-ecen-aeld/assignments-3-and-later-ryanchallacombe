@@ -108,9 +108,9 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         if ( count > ret_ent->size )
             count = ret_ent->size;
 
-        PDEBUG("copy_to_user count = %zu bytes", count);
-        PDEBUG("copy_to_user circular buffer f_pos: %lld", *f_pos);
-        PDEBUG("copy_to_user circular buffer ret_ent offset (*ret_offset): %zu", ret_offset);
+        //PDEBUG("copy_to_user count = %zu bytes", count);
+        //PDEBUG("copy_to_user circular buffer f_pos: %lld", *f_pos);
+        //PDEBUG("copy_to_user circular buffer ret_ent offset (*ret_offset): %zu", ret_offset);
 
         unsigned long uncopied_count, copied_count;
         // uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr, ret_ent->size );
@@ -120,11 +120,8 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update pointer to point to next entry
-        // PDEBUG("*f_pos: %lld\n", *f_pos);
-        //PDEBUG("ret_ent->size: %zu\n", ret_ent->size);
-        //*f_pos = *f_pos + ret_ent->size;
         *f_pos = *f_pos + copied_count;
-        PDEBUG("f_pos updated to %lld\n", *f_pos);
+        //PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     }
     /************************************************************/
@@ -185,10 +182,10 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
     if ( g_ent->buffptr != NULL ) {
-        PDEBUG("*** copying previous write into newly alloc'd memory\n");
+        //PDEBUG("*** copying previous write into newly alloc'd memory\n");
         memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
         l_ent->size = g_ent->size;        // this is how many bytes we copied into l_ent 
-        PDEBUG("*** after memcpy l_ent->size = %zu\n", l_ent->size);
+        //PDEBUG("*** after memcpy l_ent->size = %zu\n", l_ent->size);
         kfree( g_ent->buffptr );
         g_ent->buffptr = NULL;
         g_ent->size = 0;
@@ -200,20 +197,19 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // by starting the write at that offset
     size_t uncopied_count = count;
     uncopied_count = copy_from_user( (void *) (l_ent->buffptr + g_ent_start_size), buf, count);
-    PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
+    //PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
-    PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
+    //PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
     retval = count - uncopied_count;
 
     // loop through buffer to see if '\n' character is found
-    // echo "hello" > /dev/aesdchar: gives newline at index 5 with 6 bytes copied
     char c;
     char newline_found = 0;
     for(int i=0; i <= l_ent->size; i++ ) {
         c = *(l_ent->buffptr + i);   
         if ( c == '\n' ) {
             newline_found = 1;
-            PDEBUG("newline_found at index=%i\n", i);
+            //PDEBUG("newline_found at index=%i\n", i);
             break;
         }
     }
@@ -225,9 +221,9 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         //      Or be NULL if nothing overwritten
         const char *ret_ptr = NULL;
         ret_ptr = aesd_circular_buffer_add_entry( &dev->circ_buff, l_ent );
-        PDEBUG("circular buffer entry added\n");
+        //PDEBUG("circular buffer entry added\n");
         if ( ret_ptr != NULL ) {
-            PDEBUG("freeing overwritten buffer entry\n");
+            //PDEBUG("freeing overwritten buffer entry\n");
             kfree(ret_ptr);
         }
 
@@ -238,7 +234,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         // save it to g_ent for use with next write
         g_ent->buffptr = l_ent->buffptr;
         g_ent->size = l_ent->size;
-        PDEBUG("No newline found. Data stored in g_ent. g_ent->size = %zu\n", g_ent->size);
+        //PDEBUG("No newline found. Data stored in g_ent. g_ent->size = %zu\n", g_ent->size);
     }
 
     // Because the aesd_circular_buffer_add_entry() function simply copies

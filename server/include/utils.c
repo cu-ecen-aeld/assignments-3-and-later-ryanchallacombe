@@ -52,7 +52,7 @@ void *sock_thread_func(void *thread_param) {
     int *return_flag, no_flag_val = -1;     
     return_flag = &no_flag_val;     // set return_flag to a value that the function read_until_term doesn't use
     errno = 0;  
-    syslog(LOG_DEBUG, "******* starting read_until_term from spkr_fd\n");
+    // syslog(LOG_DEBUG, "******* starting read_until_term from spkr_fd\n");
     if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
         printf("Error in read_until_term. Returning -1\n");
         free(line);
@@ -102,13 +102,13 @@ void *sock_thread_func(void *thread_param) {
 
                 line = read_until_term(fd, '\n', return_flag);
 
-                syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
+                //syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
 
                 if ( *return_flag == 5 || *return_flag == 4 ) {             // reached EOF without newline char
                     //printf("***return flag: %d\n", *return_flag);
                     //printf("***reached EOF\n");
                     if ( line != NULL )
-                        syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
+                        //syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
                     thread_func_args->thread_success = true; 
                     break;
                 } else if ( *return_flag == 1 || *return_flag == 2 ) {      // malloc or realloc failed
@@ -125,7 +125,7 @@ void *sock_thread_func(void *thread_param) {
                     //cleanup_func(sockfd, servinfo);
                     //return -1;
                 } else if ( *return_flag == 0 ){                            // memory was sufficient and found a newline char
-                    syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
+                    // syslog(LOG_DEBUG, "***read_until_term returned line: %s\n", line);
 
                     // Write to socket
                     int len, bytes_sent;
@@ -246,7 +246,7 @@ int writer_func_fd(int fd, const char *buf)
         return -1;
     }
     
-    syslog( LOG_DEBUG, "*** Returning from writer_func with status = 0 ***\n" );
+    //syslog( LOG_DEBUG, "*** Returning from writer_func with status = 0 ***\n" );
     return 0;
 }
 
@@ -387,8 +387,8 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     	// read a single character 
     	errno = 0;
     	num_read = read(fd, &c, 1);
-        syslog(LOG_DEBUG, "inside read_until_term function loop: read char c: %c\n", c);
-        syslog(LOG_DEBUG, "inside read_until_term function loop: num_read: %d\n", (uint)num_read);
+        //syslog(LOG_DEBUG, "inside read_until_term function loop: read char c: %c\n", c);
+        //syslog(LOG_DEBUG, "inside read_until_term function loop: num_read: %d\n", (uint)num_read);
         //printf("read_until_term read c: %c\n", c);
         // printf("read returned: %d\n", (uint)num_read);
     	if ( num_read == -1) {
@@ -415,10 +415,10 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
     	buf[offset] = c;  // Add the byte onto the buffer
     	//printf("buf[offset]: %c\n", buf[offset] );
     	offset++;
-        syslog(LOG_DEBUG, "inside read_until_term function loop: new offset: %d\n", offset);
+        //syslog(LOG_DEBUG, "inside read_until_term function loop: new offset: %d\n", offset);
     	//printf("new offset: %d\n", offset);
     	tot_read++;
-        syslog(LOG_DEBUG, "inside read_until_term function loop: tot_read: %zu\n", tot_read);
+        //syslog(LOG_DEBUG, "inside read_until_term function loop: tot_read: %zu\n", tot_read);
         *rtn_flag = 0; 
 
     }  while ( buf[offset-1] != term );

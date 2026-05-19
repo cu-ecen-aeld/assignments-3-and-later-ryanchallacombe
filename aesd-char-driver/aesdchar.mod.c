@@ -40,6 +40,7 @@ __used __section("__versions") = {
 	{ 0x13c49cc2, "_copy_from_user" },
 	{ 0x69acdf38, "memcpy" },
 	{ 0x37a0cba, "kfree" },
+	{ 0xcbd4898c, "fortify_panic" },
 	{ 0xbdfb6dbb, "__fentry__" },
 	{ 0x122c3a7e, "_printk" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
@@ -64,4 +65,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "4CC5457599D3A47D14FF26D");
+MODULE_INFO(srcversion, "AD0EDF875C3614964F0E125");

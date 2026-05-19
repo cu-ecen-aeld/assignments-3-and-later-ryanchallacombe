@@ -149,6 +149,11 @@ int main(int argc, char *argv[]) {
 
 
     /************************* Setup write file *************************/
+    /* For assignment 8 we open and close the driver file from within
+    * the socket thread because we need f_pos to be reset when a new thread is opened
+    * if we just opened it from within main below we would have to find a different way to 
+    * reset f_pos
+    */
     int fd = 0;
     if ( !USE_AESD_CHAR_DEVICE ) {
 		// Remove it if it is already existing
@@ -422,10 +427,11 @@ int main(int argc, char *argv[]) {
 	/**************** Cleanup and Exit ****************/
 
 	DONE:
-
-	if ( close(fd) != 0 ) {
-		printf("error closing write file\n");
+	if ( !USE_AESD_CHAR_DEVICE ) {
+		if ( close(fd) != 0 )
+			printf("error closing write file\n");		
 	}
+
 
 	if ( !USE_AESD_CHAR_DEVICE ) {
 		if ( timer_delete(timerid) != 0 )
