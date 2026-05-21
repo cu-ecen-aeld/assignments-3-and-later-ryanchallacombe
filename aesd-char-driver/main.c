@@ -105,10 +105,11 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         // Write a maximum of 1 circular buffer entry
         // if more bytes are requested we will limit it to 1 entry
         // if fewer bytes are requested we will send only the requested bytes
-        if ( count > ret_ent->size )
-            count = ret_ent->size;
+        // if userspace buffer is small enough that multiple reads are required, 
+        if ( count > ret_ent->size - ret_offset)
+            count = ret_ent->size - ret_offset;
 
-        //PDEBUG("copy_to_user count = %zu bytes", count);
+        PDEBUG("copy_to_user count = %zu bytes", count);
         //PDEBUG("copy_to_user circular buffer f_pos: %lld", *f_pos);
         //PDEBUG("copy_to_user circular buffer ret_ent offset (*ret_offset): %zu", ret_offset);
 
