@@ -19,6 +19,7 @@
 #include <linux/fs.h> // file_operations
 #include <linux/slab.h>     /* kmalloc() */
 #include <linux/uaccess.h>  /* copy_*_user */
+#include <linux/fs.h>     /* fixed_size_llseek() */
 
 #include "aesdchar.h"
 #include "aesd_ioctl.h"
@@ -265,6 +266,17 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 */
 static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, unsigned int write_cmd_offset ) {
 
+    /*
+        - Check for valid write_cmd and write_cmd_offset values 
+            - haven’t written this command yet
+            - out of range cmd (11)
+            - write_cmd_offset is >= size of command
+        - Calculate the start offset to write_cmd
+            - Add length of each write between the output pointer and write_cmd
+        - Add write_cmd_offset
+        - Save as filp->f_pos
+    */
+
     return 1;
 
 }
@@ -307,10 +319,51 @@ long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         
         default:  /* redundant, as cmd was checked against MAXNR */
             return -ENOTTY;
-    }
+    }   // switch
 
     PDEBUG("aesd_ioctl returning %ld\n", retval);
     return retval;
+}
+
+/************************************************************
+* aesd_llseek
+*   repositions the file offset of filp to the argument offset 
+*   according to the directive whence as follows:
+*   SEEK_SET: The file offset is set to offset bytes.
+*   SEEK_CUR: The file offset is set to its current location plus offset bytes.
+*   SEEK_END: The file offset is set to the size of the file plus offset bytes.
+*/
+loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
+
+    /*
+    - If the llseek method is missing from the device’s
+    operations, the default implementation in the kernel
+    performs seek by modifying filp->fpos.
+    - For the lseek system call to work correctly the read
+    and write methods must cooperate by using and
+    updating the offset item they receive as an argument
+    */
+
+    /** Circular buffer implementation
+    * The caller will send a struct via the ioctl system call
+    * It will have a cmd member which is the number of the command in the buffer (0-10)
+    *   that is seeks
+    * It will have an offset member which is the numerical byte offset of the char
+    *   within the command that it seeks
+    *   example: 
+    *       buffer contents:
+    *       Grass       (size = 5)
+    *       Sentosa     (size = 7)
+    *       Singapore   (size = 9)
+    *
+    *       struct seekto.cmd = 2, seekto.cmd_offset = 3
+    * 
+    *       We need to set filp->f_pos to char 'n' which is f_pos = 15
+    */
+
+    // loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size);
+
+    return 1;
 }
 
 struct file_operations aesd_fops = {
@@ -320,6 +373,7 @@ struct file_operations aesd_fops = {
     .open =     aesd_open,
     .release =  aesd_release,
     .unlocked_ioctl = aesd_ioctl,
+    .llseek = aesd_llseek,
 };
 
 static int aesd_setup_cdev(struct aesd_dev *dev)
