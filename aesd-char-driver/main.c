@@ -255,10 +255,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         return retval;
 }
 
+
 /************************************************************
 * aesd_adjust_file_offset
 *   
-*   Adjusts the file offset parameter (f_pos) of filp based on the location specified by write_cmd (zero-reference
+*   Adjusts the file offset parameter (f_pos) of filp based on the location specified by write_cmd (zero-referenced
 *   command to locate) and write_cmd_offset (zero referenced offset into the command)
 *   return zero if successful, negative if error occurred:
 *       -ERSTARTSYS if mutex could not be obtained
@@ -277,8 +278,127 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
         - Save as filp->f_pos
     */
 
-    return 1;
+    PDEBUG("starting aesd_adjust_file_offset() function");
+    PDEBUG("write_cmd %i with write_cmd_offset %i", write_cmd, write_cmd_offset);
 
+    long retval = 0;
+
+    struct aesd_dev *dev = filp->private_data;
+
+    // TODO check all indices for overrun
+
+    //size_t ret_offset;                      // holds the offset of the first char in the returned buffer entry
+    //struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
+    // ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *f_pos, &ret_offset ); 
+
+    // check for a valid cmd range
+    if ( write_cmd > AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) {
+        PDEBUG("write_cmd is out of range. Returing %i\n", -EINVAL);
+        return -EINVAL;
+    }
+
+    // Loop through the buffer
+    // As we go sum up the total bytes in total_offset
+    // When we reach the desired command we need to first check that the command is not NULL and 
+    // that the offset is within range of the size of that command
+    // if those are okay, then we can add the write_cmd_offset to the total_offset
+    // TODO rewrite loop to improve logic
+    uint8_t index;
+    loff_t total_offset = 0;
+    struct aesd_buffer_entry *entryptr;
+    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
+        if (entryptr->buffptr != NULL) 
+            total_offset +=  entryptr->size;
+
+        if ( index == write_cmd ) {    
+            if (entryptr->buffptr != NULL) {
+                PDEBUG("write_cmd position in circ_buff is NULL. Returing %i\n", -EINVAL);
+                return -EINVAL;
+            } else if ( entryptr->size <= write_cmd_offset ) {
+                PDEBUG("write_cmd_offset is >= size of the command. Returing %i\n", -EINVAL);
+                return -EINVAL;
+            } else {
+                PDEBUG("write_cmd and write_cmd_offset are valid\n");
+                total_offset += write_cmd_offset;
+            }   
+            break;
+        }
+    }
+
+    PDEBUG("Exited circ_buff loop with total_offset = %lld\n", total_offset);
+
+    // Lock data
+    if (mutex_lock_interruptible(&dev->lock))
+        return -ERESTARTSYS;
+
+    // Call llseek. 
+    // TODO All seeks are relative to SEEK_SET ??
+    // TODO will this handle negative offsets / commands?
+    // TODO check returned value here
+    // loff_t aesd_llseek(struct file *filp, loff_t offset, int whence)
+    retval = aesd_llseek(filp, total_offset, SEEK_SET);
+
+    mutex_unlock(&dev->lock);
+
+    return retval;
+
+}
+
+/************************************************************
+* aesd_llseek
+*   repositions the file offset of filp to the argument offset 
+*   according to the directive whence as follows:
+*   SEEK_SET: The file offset is set to offset bytes.
+*   SEEK_CUR: The file offset is set to its current location plus offset bytes.
+*   SEEK_END: The file offset is set to the size of the file plus offset bytes.
+*/
+loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
+
+    /*
+    - If the llseek method is missing from the device’s
+    operations, the default implementation in the kernel
+    performs seek by modifying filp->fpos.
+    - For the lseek system call to work correctly the read
+    and write methods must cooperate by using and
+    updating the offset item they receive as an argument
+    */
+
+    /** Circular buffer implementation
+    * The caller will send a struct via the ioctl system call
+    * It will have a cmd member which is the number of the command in the buffer (0-10)
+    *   that is seeks
+    * It will have an offset member which is the numerical byte offset of the char
+    *   within the command that it seeks
+    *   example: 
+    *       buffer contents:
+    *       Grass       (size = 5)
+    *       Sentosa     (size = 7)
+    *       Singapore   (size = 9)
+    *
+    *       struct seekto.cmd = 2, seekto.cmd_offset = 3
+    * 
+    *       We need to set filp->f_pos to char 'n' which is f_pos = 15
+    */
+
+    PDEBUG("starting aesd_llseek() function\n");
+    loff_t retval = 0;
+    struct aesd_dev *dev = filp->private_data;
+
+    // Loop through to find total size of buffer
+    uint8_t index;
+    loff_t total_buffer_size = 0;
+    struct aesd_buffer_entry *entryptr;
+    AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
+        if (entryptr->buffptr != NULL)
+            total_buffer_size += entryptr->size;
+    } 
+
+    PDEBUG("Calling fixed_size_llseek with total_buffer_size = %lld\n", total_buffer_size);
+
+    // loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size);
+    retval = fixed_size_llseek(filp, offset, whence, total_buffer_size);
+
+    return retval;
 }
 
 /************************************************************
@@ -323,47 +443,6 @@ long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
     PDEBUG("aesd_ioctl returning %ld\n", retval);
     return retval;
-}
-
-/************************************************************
-* aesd_llseek
-*   repositions the file offset of filp to the argument offset 
-*   according to the directive whence as follows:
-*   SEEK_SET: The file offset is set to offset bytes.
-*   SEEK_CUR: The file offset is set to its current location plus offset bytes.
-*   SEEK_END: The file offset is set to the size of the file plus offset bytes.
-*/
-loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
-
-    /*
-    - If the llseek method is missing from the device’s
-    operations, the default implementation in the kernel
-    performs seek by modifying filp->fpos.
-    - For the lseek system call to work correctly the read
-    and write methods must cooperate by using and
-    updating the offset item they receive as an argument
-    */
-
-    /** Circular buffer implementation
-    * The caller will send a struct via the ioctl system call
-    * It will have a cmd member which is the number of the command in the buffer (0-10)
-    *   that is seeks
-    * It will have an offset member which is the numerical byte offset of the char
-    *   within the command that it seeks
-    *   example: 
-    *       buffer contents:
-    *       Grass       (size = 5)
-    *       Sentosa     (size = 7)
-    *       Singapore   (size = 9)
-    *
-    *       struct seekto.cmd = 2, seekto.cmd_offset = 3
-    * 
-    *       We need to set filp->f_pos to char 'n' which is f_pos = 15
-    */
-
-    // loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size);
-
-    return 1;
 }
 
 struct file_operations aesd_fops = {
