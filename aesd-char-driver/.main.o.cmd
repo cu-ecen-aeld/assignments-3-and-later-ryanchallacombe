@@ -1077,6 +1077,7 @@ deps_/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-drive
   include/linux/pm_wakeup.h \
   /home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/aesdchar.h \
   /home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/aesd-circular-buffer.h \
+  /home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/aesd_ioctl.h \
 
 /home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/main.o: $(deps_/home/ryan/projects/assignments-3-and-later-ryanchallacombe/aesd-char-driver/main.o)
 

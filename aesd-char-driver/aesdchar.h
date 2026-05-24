@@ -51,5 +51,6 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 //static int aesd_setup_cdev(struct aesd_dev *dev);
 int aesd_init_module(void);
 void aesd_cleanup_module(void);
+long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 #endif /* AESD_CHAR_DRIVER_AESDCHAR_H_ */

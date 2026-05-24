@@ -21,6 +21,8 @@
 #include <linux/uaccess.h>  /* copy_*_user */
 
 #include "aesdchar.h"
+#include "aesd_ioctl.h"
+
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
 
@@ -80,8 +82,8 @@ int aesd_release(struct inode *inode, struct file *filp)
 ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
                 loff_t *f_pos)
 {
-    PDEBUG("starting aesd_read() function");
-    PDEBUG("requesting a read of %zu bytes with offset %lld", count, *f_pos);
+    //PDEBUG("starting aesd_read() function");
+    //PDEBUG("requesting a read of %zu bytes with offset %lld", count, *f_pos);
     ssize_t retval = 0;     // number of bytes read
     
     /***********************************************************
@@ -100,7 +102,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     if ( ret_ent == NULL) {
         // nothing to read
         retval = 0;
-        PDEBUG("Nothing to read. aesd_read() returning with 0\n");
+        //PDEBUG("Nothing to read. aesd_read() returning with 0\n");
     } else {
         // Write a maximum of 1 circular buffer entry
         // if more bytes are requested we will limit it to 1 entry
@@ -109,7 +111,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         if ( count > ret_ent->size - ret_offset)
             count = ret_ent->size - ret_offset;
 
-        PDEBUG("copy_to_user count = %zu bytes", count);
+        //PDEBUG("copy_to_user count = %zu bytes", count);
         //PDEBUG("copy_to_user circular buffer f_pos: %lld", *f_pos);
         //PDEBUG("copy_to_user circular buffer ret_ent offset (*ret_offset): %zu", ret_offset);
 
@@ -118,7 +120,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr + ret_offset, count );
         copied_count = retval = count - uncopied_count;
 
-        PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
+        //PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update pointer to point to next entry
         *f_pos = *f_pos + copied_count;
@@ -252,6 +254,64 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         return retval;
 }
 
+/************************************************************
+* aesd_adjust_file_offset
+*   
+*   Adjusts the file offset parameter (f_pos) of filp based on the location specified by write_cmd (zero-reference
+*   command to locate) and write_cmd_offset (zero referenced offset into the command)
+*   return zero if successful, negative if error occurred:
+*       -ERSTARTSYS if mutex could not be obtained
+*       -EINVAL if write_cmd or write_cmd_offset are out of range
+*/
+static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, unsigned int write_cmd_offset ) {
+
+    return 1;
+
+}
+
+/************************************************************
+* aesd_ioctl
+*   
+*/
+long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
+
+    PDEBUG("starting aesd_ioctl() function\n");
+
+    long retval = 0;
+
+    /*
+     * extract the type and number bitfields, and don't decode
+     * wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
+     */
+    if (_IOC_TYPE(cmd) != AESD_IOC_MAGIC) {
+        PDEBUG("incorrect _IOC_TYPE(cmd): %i\n", _IOC_TYPE(cmd));
+        return -ENOTTY;
+    }
+    if (_IOC_NR(cmd) > AESDCHAR_IOC_MAXNR) {
+        PDEBUG("_IOC_NR(cmd) out of range: %i\n", _IOC_NR(cmd));
+        return -ENOTTY;
+    }
+
+    switch (cmd) {
+
+        case AESDCHAR_IOCSEEKTO: 
+            struct aesd_seekto seekto;
+            if ( copy_from_user( &seekto, (const void __user *) arg, sizeof(seekto) ) != 0 ) {
+                retval = EFAULT;
+            } else {
+                PDEBUG("userspace calling aesd_ioctl with seekto.write_cmd: %i\n", seekto.write_cmd);
+                PDEBUG("userspace calling aesd_ioctl with seekto.write_cmd_offset: %i\n", seekto.write_cmd_offset);
+                retval = aesd_adjust_file_offset(filp, seekto.write_cmd, seekto.write_cmd_offset);
+            }
+            break;
+        
+        default:  /* redundant, as cmd was checked against MAXNR */
+            return -ENOTTY;
+    }
+
+    PDEBUG("aesd_ioctl returning %ld\n", retval);
+    return retval;
+}
 
 struct file_operations aesd_fops = {
     .owner =    THIS_MODULE,
@@ -259,6 +319,7 @@ struct file_operations aesd_fops = {
     .write =    aesd_write,
     .open =     aesd_open,
     .release =  aesd_release,
+    .unlocked_ioctl = aesd_ioctl,
 };
 
 static int aesd_setup_cdev(struct aesd_dev *dev)
