@@ -121,7 +121,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr + ret_offset, count );
         copied_count = retval = count - uncopied_count;
 
-        //PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
+        PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update f_pos
         *f_pos = *f_pos + copied_count;
@@ -284,14 +284,7 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
     PDEBUG("write_cmd %i with write_cmd_offset %i", write_cmd, write_cmd_offset);
 
     long retval = 0;
-
     struct aesd_dev *dev = filp->private_data;
-
-    // TODO check all indices for overrun
-
-    //size_t ret_offset;                      // holds the offset of the first char in the returned buffer entry
-    //struct aesd_buffer_entry *ret_ent;      // will hold the entry value found at f_pos or NULL if none
-    // ret_ent = aesd_circular_buffer_find_entry_offset_for_fpos( &dev->circ_buff, *f_pos, &ret_offset ); 
 
     // check for a valid cmd range
     if ( write_cmd > AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) {
@@ -299,11 +292,18 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
         return -EINVAL;
     }
 
-    // Loop through the buffer
-    // As we go sum up the total bytes in total_offset
-    // When we reach the desired command we need to first check that the command is not NULL and 
-    // that the offset is within range of the size of that command
-    // if those are okay, then we can add the write_cmd_offset to the total_offset
+    // Lock data
+    if (mutex_lock_interruptible(&dev->lock))
+        return -ERESTARTSYS;
+
+    /**
+     * Loop through the buffer 
+     * As we go sum up the total bytes in total_offset 
+     * When we reach the desired command we need to first check that the command is not NULL and 
+     * that the offset is within range of the size of that command 
+     * if those are okay, then we can add the write_cmd_offset to the total_offset
+     * 
+    */
     // TODO rewrite loop to improve logic
     uint8_t index;
     loff_t total_offset = 0;
@@ -312,11 +312,11 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
         if (entryptr->buffptr != NULL) 
             total_offset +=  entryptr->size;
 
-        if ( index == write_cmd ) {    
+        if ( index == (write_cmd - 1) ) {    
             if (entryptr->buffptr == NULL) {
                 PDEBUG("write_cmd position in circ_buff is NULL. Returing %i\n", -EINVAL);
                 return -EINVAL;
-            } else if (  write_cmd_offset >= entryptr->size ) {
+            } else if (  write_cmd_offset >= entryptr->size ) {     /* last byte is \n. Used >= b/c equal will include it */
                 PDEBUG("write_cmd_offset is >= size of the command. Returing %i\n", -EINVAL);
                 return -EINVAL;
             } else {
@@ -329,16 +329,12 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
 
     PDEBUG("Exited circ_buff loop with total_offset = %lld\n", total_offset);
 
-    // Lock data
-    if (mutex_lock_interruptible(&dev->lock))
-        return -ERESTARTSYS;
-
     // Call llseek. 
     // TODO All seeks are relative to SEEK_SET ??
     // TODO will this handle negative offsets / commands?
     // TODO check returned value here
-    // loff_t aesd_llseek(struct file *filp, loff_t offset, int whence)
     retval = aesd_llseek(filp, total_offset, SEEK_SET);
+    PDEBUG("aesd_llseek retval = %ld\n", retval);
 
     mutex_unlock(&dev->lock);
 
@@ -365,7 +361,7 @@ loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
     updating the offset item they receive as an argument
     */
 
-    /** Circular buffer implementation
+    /** Circular buffer implementation of llseek
     * The caller will send a struct via the ioctl system call
     * It will have a cmd member which is the number of the command in the buffer (0-10)
     *   that is seeks
@@ -396,8 +392,6 @@ loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
     } 
 
     PDEBUG("Calling fixed_size_llseek with offset = %lld and total_buffer_size = %lld\n", offset, total_buffer_size);
-
-    // loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size);
     retval = fixed_size_llseek(filp, offset, whence, total_buffer_size);
 
     return retval;
@@ -491,23 +485,12 @@ int aesd_init_module(void)
     /**********************************************************
      * TODO: initialize the AESD specific portion of the device
      */
-    PDEBUG("&aesd_device: %p\n", (void *) &aesd_device);
-    PDEBUG("&aesd_device.circ_buff: %p\n", (void *) &aesd_device.circ_buff );
-    PDEBUG("&aesd_device.lock: %p\n", (void *) &aesd_device.lock );
-    PDEBUG("&aesd_device.g_ent: %p\n", (void *) &aesd_device.g_ent );
-    PDEBUG("aesd_device.g_ent: %p\n", aesd_device.g_ent );
 
     // initialize buffer
     aesd_circular_buffer_init( &aesd_device.circ_buff );
     
     // initialiaze mutex
     mutex_init( &aesd_device.lock );
-
-    // initialize statically allocatted aesd_buffer_entry g_ent 
-    // WRONG!! the value of aesd_device.g_ent was set to zero, so it points to location 0
-    // we cannot dereference it
-    // aesd_device.g_ent->buffptr = NULL;
-    // aesd_device.g_ent->size = 0;
 
     // dynamically allocate aesd_buffer_entry and point g_ent to it
     struct aesd_buffer_entry *ent = kmalloc( sizeof( struct aesd_buffer_entry ), GFP_KERNEL );
@@ -516,9 +499,7 @@ int aesd_init_module(void)
         result = -ENOMEM;
         goto init_fail;       
     }
-    PDEBUG("ent: %p\n", (void *) ent );
     aesd_device.g_ent = ent;
-    PDEBUG("aesd_device.g_ent: %p\n", (void *) aesd_device.g_ent );
 
     // initialize values in g_ent structure
     aesd_device.g_ent->buffptr = NULL;

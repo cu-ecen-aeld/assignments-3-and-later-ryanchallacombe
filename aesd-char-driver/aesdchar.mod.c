@@ -47,7 +47,6 @@ __used __section("__versions") = {
 	{ 0x87a21cb3, "__ubsan_handle_out_of_bounds" },
 	{ 0x6a7b86fa, "cdev_add" },
 	{ 0x4c03a563, "random_kmalloc_seed" },
-	{ 0x6e9588f5, "fixed_size_llseek" },
 	{ 0xcefb0c9f, "__mutex_init" },
 	{ 0x89940875, "mutex_lock_interruptible" },
 	{ 0x5b8239ca, "__x86_return_thunk" },
@@ -66,4 +65,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "086767B1256FA2BEAFEC2F3");
+MODULE_INFO(srcversion, "52C6A1CC5C93CB7815D35E0");
