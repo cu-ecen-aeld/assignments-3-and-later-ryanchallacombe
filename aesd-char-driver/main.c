@@ -123,9 +123,9 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 
         //PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
-        // update pointer to point to next entry
+        // update f_pos
         *f_pos = *f_pos + copied_count;
-        //PDEBUG("f_pos updated to %lld\n", *f_pos);
+        PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     }
     /************************************************************/
@@ -160,8 +160,6 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         return -ERESTARTSYS;
 
     // allocate memory for this write
-    // if we are starting with an empty buffer, we can just allocate @param count bytes
-    // if our buffer has data from a previous write, we need to allocate more
     struct aesd_buffer_entry *l_ent = kmalloc( sizeof(struct aesd_buffer_entry), GFP_KERNEL );
     if ( l_ent == NULL ) {
         PDEBUG("error allocating for l_ent\n");
@@ -171,7 +169,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     memset(l_ent, 0, sizeof(struct aesd_buffer_entry));
 
     // this allocation accounts for existing write data to the buff pointed to by g_ent
-    // if no existing data in g_ent, the size is zero and the pointer is NULL
+    // if no existing data in g_ent, the size is zero
     l_ent->buffptr = kmalloc(count + g_ent->size, GFP_KERNEL);
     if ( l_ent->buffptr == NULL ) {
         PDEBUG("error allocating for l_ent->buffptr\n");
@@ -184,7 +182,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // save the size of the g_ent buffer for later use
     size_t g_ent_start_size = g_ent->size;
 
-    // if existing data pointed to by g_ent->buffptr, we need to copy it to new and bigger buffer, then free it
+    // if existing data pointed to by g_ent->buffptr, we need to copy it to new (bigger) buffer, then free it
     if ( g_ent->buffptr != NULL ) {
         //PDEBUG("*** copying previous write into newly alloc'd memory\n");
         memcpy( (void *) l_ent->buffptr, g_ent->buffptr, g_ent->size);
@@ -199,12 +197,16 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     // copy data from user
     // note that we need to account for the size of any data from g_ent that was copied into l_ent
     // by starting the write at that offset
-    size_t uncopied_count = count;
+    size_t uncopied_count = count, copied_count;
     uncopied_count = copy_from_user( (void *) (l_ent->buffptr + g_ent_start_size), buf, count);
     //PDEBUG("copy_from_user copied %zu bytes\n", count - uncopied_count);
     l_ent->size += (count - uncopied_count);
     //PDEBUG("*** after copy_from_user l_ent->size = %zu\n", l_ent->size);
-    retval = count - uncopied_count;
+    copied_count = retval = count - uncopied_count;
+
+    // update f_pos
+    *f_pos = *f_pos + copied_count;
+    PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     // loop through buffer to see if '\n' character is found
     char c;
@@ -311,10 +313,10 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
             total_offset +=  entryptr->size;
 
         if ( index == write_cmd ) {    
-            if (entryptr->buffptr != NULL) {
+            if (entryptr->buffptr == NULL) {
                 PDEBUG("write_cmd position in circ_buff is NULL. Returing %i\n", -EINVAL);
                 return -EINVAL;
-            } else if ( entryptr->size <= write_cmd_offset ) {
+            } else if (  write_cmd_offset >= entryptr->size ) {
                 PDEBUG("write_cmd_offset is >= size of the command. Returing %i\n", -EINVAL);
                 return -EINVAL;
             } else {
@@ -370,10 +372,10 @@ loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
     * It will have an offset member which is the numerical byte offset of the char
     *   within the command that it seeks
     *   example: 
-    *       buffer contents:
-    *       Grass       (size = 5)
-    *       Sentosa     (size = 7)
-    *       Singapore   (size = 9)
+    *       buffer contents: Note: seek offsets DO include \n while the size counts do not
+    *       Grass\n       size = 5 (doesn't count \n), seek to first byte = 0, seek to last byte = 5
+    *       Sentosa\n     size = 7 (doesn't count \n), seek to first byte = 6, seek to last byte = 13
+    *       Singapore\n   size = 9 (doesn't count \n), seek to first byte = 14, seek to last byte = 23 
     *
     *       struct seekto.cmd = 2, seekto.cmd_offset = 3
     * 
@@ -393,7 +395,7 @@ loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
             total_buffer_size += entryptr->size;
     } 
 
-    PDEBUG("Calling fixed_size_llseek with total_buffer_size = %lld\n", total_buffer_size);
+    PDEBUG("Calling fixed_size_llseek with offset = %lld and total_buffer_size = %lld\n", offset, total_buffer_size);
 
     // loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size);
     retval = fixed_size_llseek(filp, offset, whence, total_buffer_size);
