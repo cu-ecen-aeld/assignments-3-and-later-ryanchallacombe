@@ -121,11 +121,11 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         uncopied_count = copy_to_user( buf, (void *) ret_ent->buffptr + ret_offset, count );
         copied_count = retval = count - uncopied_count;
 
-        PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
+        // PDEBUG("aesd_read() complete: %zu bytes with offset %lld", retval, *f_pos);
 
         // update f_pos
         *f_pos = *f_pos + copied_count;
-        PDEBUG("f_pos updated to %lld\n", *f_pos);
+        //PDEBUG("f_pos updated to %lld\n", *f_pos);
 
     }
     /************************************************************/

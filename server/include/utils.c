@@ -7,7 +7,7 @@
 
 int writer_func(const char *fpath, const char *buf);
 void signal_handler(int signal_number);
-char *read_until_term(int fd, const char term, int *rtn_flag);
+char *read_until_term(int fd, const char term, int *rtn_flag, int *bytes_read);
 ssize_t readLine(int fd, void *buffer, size_t n);
 void cleanup_func(int socket_fd, struct addrinfo *servinfo);
 void exit_message(void);
@@ -49,11 +49,13 @@ void *sock_thread_func(void *thread_param) {
     /************************* Receive data *************************/
 
     char *line;
-    int *return_flag, no_flag_val = -1;     
+    int *return_flag, no_flag_val = -1, no_bytes_read_val = 0;     
     return_flag = &no_flag_val;     // set return_flag to a value that the function read_until_term doesn't use
+    int *bytes_read;                // will hold number of bytes read by the read_until_term() function
+    bytes_read = &no_bytes_read_val;
     errno = 0;  
     // syslog(LOG_DEBUG, "******* starting read_until_term from spkr_fd\n");
-    if ( (line = read_until_term(spkr_fd, '\n', return_flag)) == NULL) {
+    if ( (line = read_until_term(spkr_fd, '\n', return_flag, bytes_read)) == NULL) {
         printf("Error in read_until_term. Returning -1\n");
         free(line);
         //cleanup_func(sockfd, servinfo);
@@ -61,6 +63,27 @@ void *sock_thread_func(void *thread_param) {
     } else  {
         //printf("***line read from the socket: %s\n", line);
         //printf("***return flag: %d\n", *return_flag);
+
+        /************************* Check for IOCTL tag in recieved string *************************/
+        /**
+         * We are looking for AESDCHAR_IOCSEEKTO:X,Y where X and Y are ioctl command and write offset
+         *
+         *
+        */          
+        // printf("read_until_term returned %i bytes\n", *bytes_read);
+        const char* ioc_pfx ="AESDCHAR_IOCSEEKTO";      // tag prefix we are looking for
+        size_t num_chars = 18;                          // number of chars in the tag prefix
+        char parsed_line[num_chars + 1];             // will hold the parsed string
+
+        if ( *bytes_read == 23 ) {       
+            strncpy(parsed_line, line, num_chars);
+
+            // compare the strings
+            int cmp_ret = strncmp(ioc_pfx, parsed_line, num_chars);
+            printf("strncmp returned %i\n", cmp_ret);
+        }
+
+
 
         /************************* Obtain mutex and write to file *************************/
         errno = 0;
@@ -90,7 +113,10 @@ void *sock_thread_func(void *thread_param) {
             /**************** Read all data from the file and write back on the socket stream ****************/
             // open write file
             //int wr_file_fd = open(wr_file_path, O_RDONLY)
+            no_flag_val = -1;
             return_flag = &no_flag_val;             // reset return flag value
+            no_bytes_read_val = 0;
+            bytes_read = &no_bytes_read_val;        // reset bytes read
 
             // set file position
             lseek(fd, (off_t) 0, SEEK_SET); 
@@ -100,7 +126,7 @@ void *sock_thread_func(void *thread_param) {
             // line has been freed but we will reuse it here
             for (;;) {
 
-                line = read_until_term(fd, '\n', return_flag);
+                line = read_until_term(fd, '\n', return_flag, bytes_read);
 
                 //syslog(LOG_DEBUG, "***read_until_term return flag: %d\n", *return_flag);
 
@@ -339,9 +365,12 @@ void signal_handler(int signal_number)
 //  3 = read() error
 //  4 = reached EOF and no bytes were read
 //  5 = reached EOF and some bytes were read
+//
+//  Assignment 9 update:*bytes_read passed in by caller will be updated to the number of bytes read by the function
+//                      This number includes the newline char, but does NOT include the null terminator    
 
 
-char *read_until_term(int fd, const char term, int *rtn_flag)
+char *read_until_term(int fd, const char term, int *rtn_flag, int *bytes_read)
 {
 
     ssize_t num_read;      	// # of bytes fetched by last read()
@@ -437,8 +466,9 @@ char *read_until_term(int fd, const char term, int *rtn_flag)
             buf = new_buf;
     }
 
-    // Add the NUL terminator
+    // Add the NUL terminator set number of bytes that were read
     buf[offset] = '\0';
+    *bytes_read = offset;
 
     return buf;
 }

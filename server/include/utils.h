@@ -34,7 +34,7 @@ struct sock_thread_data {
 
 int writer_func(const char *fpath, const char *buf);
 void signal_handler ( int signal_number );
-char *read_until_term(int fd, const char term, int *rtn_flag);
+char *read_until_term(int fd, const char term, int *rtn_flag, int *bytes_read);
 ssize_t readLine(int fd, void *buffer, size_t n);
 void cleanup_func(int socket_fd, struct addrinfo *servinfo);
 void exit_message(void);
