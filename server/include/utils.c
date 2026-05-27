@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "../../aesd-char-driver/aesd_ioctl.h"
 
 
 /////////////////////////////
@@ -68,19 +69,40 @@ void *sock_thread_func(void *thread_param) {
         /**
          * We are looking for AESDCHAR_IOCSEEKTO:X,Y where X and Y are ioctl command and write offset
          *
-         *
         */          
-        // printf("read_until_term returned %i bytes\n", *bytes_read);
         const char* ioc_pfx ="AESDCHAR_IOCSEEKTO";      // tag prefix we are looking for
         size_t num_chars = 18;                          // number of chars in the tag prefix
-        char parsed_line[num_chars + 1];             // will hold the parsed string
+        char parsed_line[num_chars + 1];                // will hold the parsed string
+        int n_found_ioc_tag = 1;                        // will be set to zero if we found the tag                       
 
         if ( *bytes_read == 23 ) {       
             strncpy(parsed_line, line, num_chars);
 
-            // compare the strings
-            int cmp_ret = strncmp(ioc_pfx, parsed_line, num_chars);
-            printf("strncmp returned %i\n", cmp_ret);
+            // Compare strings to see if we found ioc_pfx
+            n_found_ioc_tag = strncmp(ioc_pfx, parsed_line, num_chars);
+            if ( ! n_found_ioc_tag ) {
+                syslog(LOG_DEBUG,"strncmp returned %i\n", n_found_ioc_tag);
+
+                // parse cmd and offset, convert to numbers
+                int cmd_pos = 19, offs_pos = 21;
+                char cmd_c = line[cmd_pos];
+                char offs_c = line[offs_pos];
+                int write_cmd = cmd_c - '0';
+                int write_cmd_offset = offs_c - '0';
+                //syslog(LOG_DEBUG,"write_cmd: %i, write_cmd_offset: %i\n", write_cmd, write_cmd_offset);  
+
+                // call ioctl
+                struct aesd_seekto seekto;
+                seekto.write_cmd = write_cmd;
+                seekto.write_cmd_offset = write_cmd_offset;
+                seekto = seekto;
+                // TODO where to call ioctl??
+                //int ret_ioctl = ioctl(fd, )
+
+
+
+            }
+            
         }
 
 
