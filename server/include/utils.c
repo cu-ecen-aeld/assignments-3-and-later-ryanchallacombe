@@ -73,7 +73,8 @@ void *sock_thread_func(void *thread_param) {
         const char* ioc_pfx ="AESDCHAR_IOCSEEKTO";      // tag prefix we are looking for
         size_t num_chars = 18;                          // number of chars in the tag prefix
         char parsed_line[num_chars + 1];                // will hold the parsed string
-        int n_found_ioc_tag = 1;                        // will be set to zero if we found the tag                       
+        int n_found_ioc_tag = 1;                        // will be set to zero if we found the tag     
+        struct aesd_seekto seekto;                  
 
         if ( *bytes_read == 23 ) {       
             strncpy(parsed_line, line, num_chars);
@@ -81,7 +82,7 @@ void *sock_thread_func(void *thread_param) {
             // Compare strings to see if we found ioc_pfx
             n_found_ioc_tag = strncmp(ioc_pfx, parsed_line, num_chars);
             if ( ! n_found_ioc_tag ) {
-                syslog(LOG_DEBUG,"strncmp returned %i\n", n_found_ioc_tag);
+                //syslog(LOG_DEBUG,"strncmp returned %i\n", n_found_ioc_tag);
 
                 // parse cmd and offset, convert to numbers
                 int cmd_pos = 19, offs_pos = 21;
@@ -89,20 +90,12 @@ void *sock_thread_func(void *thread_param) {
                 char offs_c = line[offs_pos];
                 int write_cmd = cmd_c - '0';
                 int write_cmd_offset = offs_c - '0';
-                //syslog(LOG_DEBUG,"write_cmd: %i, write_cmd_offset: %i\n", write_cmd, write_cmd_offset);  
+                syslog(LOG_DEBUG,"write_cmd: %i, write_cmd_offset: %i\n", write_cmd, write_cmd_offset);  
 
-                // call ioctl
-                struct aesd_seekto seekto;
+                // setup seekto struct
                 seekto.write_cmd = write_cmd;
                 seekto.write_cmd_offset = write_cmd_offset;
-                seekto = seekto;
-                // TODO where to call ioctl??
-                //int ret_ioctl = ioctl(fd, )
-
-
-
             }
-            
         }
 
 
@@ -110,7 +103,8 @@ void *sock_thread_func(void *thread_param) {
         /************************* Obtain mutex and write to file *************************/
         errno = 0;
         if ( pthread_mutex_lock(thread_func_args->mutex) != 0 ) {
-            printf("Error %d (%s) locking thread data!\n", errno, strerror(errno));
+            syslog(LOG_ERR, "Error %d (%s) locking thread data!\n", errno, strerror(errno));
+            return thread_param;
         } else {
 
             // if using driver, open the driver here
@@ -119,17 +113,23 @@ void *sock_thread_func(void *thread_param) {
                 syslog(LOG_DEBUG, "Opening driver fd = %d from sock_thread_func\n", fd);            
             }        
 
-            // Write to file
-            ret = lseek(fd, (off_t) 0, SEEK_SET); 
-            //printf("lseek returns: %d\n", ret);
-            if ( (ret = writer_func_fd(fd, line)) != 0) {
-                printf("writer_func returned: %d\n", ret);
-                free(line);
-                //cleanup_func(sockfd, servinfo);
-                //return -1;
+            // Write to file if not ioctl
+            if ( n_found_ioc_tag ) {
+                ret = lseek(fd, (off_t) 0, SEEK_SET); 
+                //printf("lseek returns: %d\n", ret);
+                if ( (ret = writer_func_fd(fd, line)) != 0) {
+                    printf("writer_func returned: %d\n", ret);
+                    free(line);
+                    //cleanup_func(sockfd, servinfo);
+                    //return -1;
+                } else {
+                    //printf("writer_func completed write\n");
+                    free(line);
+                }
             } else {
-                //printf("writer_func completed write\n");
-                free(line);
+                // call ioctl
+                int ret_ioctl = ioctl(fd, AESDCHAR_IOCSEEKTO, &seekto);
+                syslog(LOG_DEBUG, "ioctl returned: %i\n", ret_ioctl);
             }
 
             /**************** Read all data from the file and write back on the socket stream ****************/
