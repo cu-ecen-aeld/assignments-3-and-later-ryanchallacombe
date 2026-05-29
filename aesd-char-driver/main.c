@@ -305,14 +305,13 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
      * 
     */
     // TODO rewrite loop to improve logic
-    uint8_t index;
+    uint32_t index = 0;
     loff_t total_offset = 0;
     struct aesd_buffer_entry *entryptr;
     AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
-        if (entryptr->buffptr != NULL) 
-            total_offset +=  entryptr->size;
 
-        if ( index == (write_cmd - 1) ) {    
+        if ( index == write_cmd ) {    
+            PDEBUG("index == write_cmd\n");
             if (entryptr->buffptr == NULL) {
                 PDEBUG("write_cmd position in circ_buff is NULL. Returing %i\n", -EINVAL);
                 return -EINVAL;
@@ -323,6 +322,11 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
                 PDEBUG("write_cmd and write_cmd_offset are valid\n");
                 total_offset += write_cmd_offset;
             }   
+            break;
+        } else if (entryptr->buffptr != NULL) {
+                total_offset +=  entryptr->size;
+        } else {
+            // entryptr->buffptr == NULL
             break;
         }
     }
@@ -393,6 +397,7 @@ loff_t aesd_llseek(struct file *filp, loff_t offset, int whence) {
 
     PDEBUG("Calling fixed_size_llseek with offset = %lld and total_buffer_size = %lld\n", offset, total_buffer_size);
     retval = fixed_size_llseek(filp, offset, whence, total_buffer_size);
+    PDEBUG("fixed_size_llseek returned with: %lld\n", retval);
 
     return retval;
 }
@@ -544,7 +549,7 @@ void aesd_cleanup_module(void)
     struct aesd_buffer_entry *entryptr;
     AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
         if (entryptr->buffptr != NULL) {
-            PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
+            //PDEBUG("freeing aesd_buffer_entry: %s\n", entryptr->buffptr);
             kfree((void *) entryptr->buffptr);            
         }
     }
