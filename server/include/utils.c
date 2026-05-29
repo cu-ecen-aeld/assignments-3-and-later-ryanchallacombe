@@ -100,7 +100,7 @@ void *sock_thread_func(void *thread_param) {
 
 
 
-        /************************* Obtain mutex and write to file *************************/
+        /*************** Obtain mutex and write to file or execute the ioctl call ******/
         errno = 0;
         if ( pthread_mutex_lock(thread_func_args->mutex) != 0 ) {
             syslog(LOG_ERR, "Error %d (%s) locking thread data!\n", errno, strerror(errno));
@@ -127,9 +127,7 @@ void *sock_thread_func(void *thread_param) {
                     free(line);
                 }
             } else {
-                // call ioctl
-                int ret_ioctl = ioctl(fd, AESDCHAR_IOCSEEKTO, &seekto);
-                syslog(LOG_DEBUG, "ioctl returned: %i\n", ret_ioctl);
+                // don't write if ioctl found
             }
 
             /**************** Read all data from the file and write back on the socket stream ****************/
@@ -141,7 +139,13 @@ void *sock_thread_func(void *thread_param) {
             bytes_read = &no_bytes_read_val;        // reset bytes read
 
             // set file position
-            lseek(fd, (off_t) 0, SEEK_SET); 
+            if ( n_found_ioc_tag ) {
+                lseek(fd, (off_t) 0, SEEK_SET); 
+            } else {
+                // call ioctl
+                int ret_ioctl = ioctl(fd, AESDCHAR_IOCSEEKTO, &seekto);
+                syslog(LOG_DEBUG, "ioctl returned: %i\n", ret_ioctl);
+            }
 
             syslog(LOG_DEBUG, "******* starting read_until_term loop, reading from fd\n");
             // loop to read from file and write to socket stream
@@ -428,12 +432,6 @@ char *read_until_term(int fd, const char term, int *rtn_flag, int *bytes_read)
             buf = new_buf;  // Successful realloc
 
     	}
-
-        // set file position
-        //int ret = lseek(fd, (off_t) 0, SEEK_SET); 
-        //printf("lseek returns: %d\n", ret);
-        //ret = fcntl(fd, F_GETFL);
-        //printf("fcntl returns: %#06x\n", ret);
 
     	// read a single character 
     	errno = 0;
