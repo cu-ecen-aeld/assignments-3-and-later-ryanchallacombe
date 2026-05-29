@@ -309,7 +309,7 @@ static long aesd_adjust_file_offset( struct file *filp, unsigned int write_cmd, 
     loff_t total_offset = 0;
     struct aesd_buffer_entry *entryptr;
     AESD_CIRCULAR_BUFFER_FOREACH(entryptr, &dev->circ_buff, index) {
-
+        PDEBUG("index = %i, write_cmd = %i\n", index, write_cmd);
         if ( index == write_cmd ) {    
             PDEBUG("index == write_cmd\n");
             if (entryptr->buffptr == NULL) {
